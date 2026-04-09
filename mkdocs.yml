@@ -16,8 +16,8 @@ theme:
     - search.suggest
   palette:
     - scheme: default
-      primary: deep purple
-      accent: teal
+      primary: deep orange
+      accent: orange
 
 markdown_extensions:
   - admonition

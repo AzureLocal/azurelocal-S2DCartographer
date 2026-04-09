@@ -1,4 +1,4 @@
-# S2DCartographer
+![S2D Cartographer](assets/images/s2dcartographer-banner.svg)
 
 Welcome to **S2DCartographer** — the Storage Spaces Direct analysis, visualization, and reporting tool for Azure Local and Windows Server clusters.
 
