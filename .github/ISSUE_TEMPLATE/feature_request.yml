@@ -1,0 +1,46 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for S2DCartographer
+title: "[Feature] "
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! Please describe the feature and its motivation.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What problem does this feature solve? What is the current pain point?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature you'd like to see. Include example cmdlet usage if applicable.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature area
+      options:
+        - Collection (new data gathered)
+        - Capacity math / waterfall
+        - Health checks
+        - HTML report
+        - Word / PDF report
+        - Excel report
+        - Diagrams
+        - Authentication / connectivity
+        - Performance
+        - Other
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you considered any workarounds or alternative approaches?

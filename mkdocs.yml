@@ -1,0 +1,41 @@
+site_name: S2DCartographer
+site_description: S2DCartographer — Storage Spaces Direct analysis, visualization, and capacity reporting for Azure Local and Windows Server
+site_author: Kristopher Turner
+site_url: https://azurelocal.github.io/azurelocal-S2DCartographer/
+repo_url: https://github.com/AzureLocal/azurelocal-S2DCartographer
+repo_name: AzureLocal/azurelocal-S2DCartographer
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+    - search.suggest
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: teal
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Concepts:
+    - TiB vs TB: tib-vs-tb.md
+    - Capacity Math: capacity-math.md
+  - Collectors:
+    - Overview: collectors.md
+  - Outputs:
+    - Reports: reports.md
+    - Diagrams: diagrams.md
+  - Changelog: changelog.md
