@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" width="640" height="160">
+  <defs>
+    <linearGradient id="bgBanner" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#003A70;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#0078D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1A86D8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bgIcon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A86D8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#003A70;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="mapGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#F7941D;stop-opacity:0.22" />
+      <stop offset="100%" style="stop-color:#0078D4;stop-opacity:0" />
+    </radialGradient>
+    <filter id="dropshadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#001A3A" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="640" height="160" rx="16" ry="16" fill="url(#bgBanner)"/>
+
+  <!-- Subtle terrain grid -->
+  <g opacity="0.06" stroke="white" stroke-width="0.7">
+    <line x1="0" y1="40" x2="640" y2="40"/>
+    <line x1="0" y1="80" x2="640" y2="80"/>
+    <line x1="0" y1="120" x2="640" y2="120"/>
+    <line x1="160" y1="0" x2="160" y2="160"/>
+    <line x1="320" y1="0" x2="320" y2="160"/>
+    <line x1="480" y1="0" x2="480" y2="160"/>
+  </g>
+
+  <!-- Diagonal survey line accent (faint) -->
+  <g opacity="0.04" stroke="white" stroke-width="1">
+    <line x1="0" y1="0" x2="161" y2="161"/>
+    <line x1="161" y1="0" x2="0" y2="161"/>
+  </g>
+
+  <!-- Icon area background (left panel) -->
+  <rect x="16" y="16" width="145" height="128" rx="20" fill="url(#bgIcon)" opacity="0.7"/>
+
+  <!-- Cartographer badge -->
+  <g transform="translate(89,30)" filter="url(#dropshadow)">
+    <polygon points="0,-12 12,-4 8,10 0,6 -8,10 -12,-4"
+      fill="#F7941D" stroke="#C06910" stroke-width="0.8"/>
+    <text x="0" y="2" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold"
+      font-size="7" fill="white">C</text>
+  </g>
+
+  <!-- Main circular element -->
+  <g filter="url(#dropshadow)">
+    <!-- Outer ring -->
+    <circle cx="89" cy="90" r="38" fill="white"/>
+
+    <!-- Inner face -->
+    <circle cx="89" cy="90" r="32" fill="url(#bgIcon)"/>
+    <circle cx="89" cy="90" r="32" fill="url(#mapGlow)"/>
+
+    <!-- Topographic contour rings -->
+    <circle cx="89" cy="90" r="25" fill="none" stroke="#F7941D" stroke-width="1" opacity="0.30"/>
+    <circle cx="89" cy="90" r="16" fill="none" stroke="#F7941D" stroke-width="1" opacity="0.45"/>
+
+    <!-- Coordinate crosshairs -->
+    <g stroke="white" stroke-width="0.6" opacity="0.18">
+      <line x1="57" y1="90" x2="121" y2="90"/>
+      <line x1="89" y1="58" x2="89" y2="122"/>
+    </g>
+
+    <!-- S2D cluster topology lines — diamond edges -->
+    <!-- Nodes: N=(89,66), E=(113,90), S=(89,114), W=(65,90) -->
+    <g stroke="#F7941D" stroke-width="1.5" opacity="0.65">
+      <line x1="89"  y1="66"  x2="113" y2="90"/>
+      <line x1="113" y1="90"  x2="89"  y2="114"/>
+      <line x1="89"  y1="114" x2="65"  y2="90"/>
+      <line x1="65"  y1="90"  x2="89"  y2="66"/>
+    </g>
+
+    <!-- Hub spokes to center -->
+    <g stroke="#F7941D" stroke-width="1.1" opacity="0.45">
+      <line x1="89" y1="90" x2="89"  y2="66"/>
+      <line x1="89" y1="90" x2="113" y2="90"/>
+      <line x1="89" y1="90" x2="89"  y2="114"/>
+      <line x1="89" y1="90" x2="65"  y2="90"/>
+    </g>
+
+    <!-- Outer cluster nodes -->
+    <circle cx="89"  cy="66"  r="5" fill="#F7941D" stroke="white" stroke-width="1.1"/>
+    <circle cx="113" cy="90"  r="5" fill="#F7941D" stroke="white" stroke-width="1.1"/>
+    <circle cx="89"  cy="114" r="5" fill="#F7941D" stroke="white" stroke-width="1.1"/>
+    <circle cx="65"  cy="90"  r="5" fill="#F7941D" stroke="white" stroke-width="1.1"/>
+
+    <!-- Center survey pin -->
+    <circle cx="89" cy="90" r="4.5" fill="white"   stroke="#F7941D" stroke-width="2"/>
+    <circle cx="89" cy="90" r="2"   fill="#F7941D"/>
+
+    <!-- Outer ring highlight -->
+    <circle cx="89" cy="90" r="32" fill="none" stroke="white" stroke-width="1.5" opacity="0.2"/>
+  </g>
+
+  <!-- Divider line -->
+  <line x1="175" y1="24" x2="175" y2="136" stroke="white" stroke-width="0.8" opacity="0.25"/>
+
+  <!-- Title text -->
+  <text x="197" y="62" font-family="'Segoe UI', Arial, sans-serif" font-weight="700"
+    font-size="34" fill="white" letter-spacing="-0.5" filter="url(#dropshadow)">Azure Local</text>
+  <text x="197" y="112" font-family="'Segoe UI', Arial, sans-serif" font-weight="700"
+    font-size="42" fill="#F7941D" letter-spacing="0.5" filter="url(#dropshadow)">S2D Cartographer</text>
+
+  <!-- Tagline -->
+  <text x="197" y="139" font-family="'Segoe UI', Arial, sans-serif" font-style="italic"
+    font-size="14" fill="white" opacity="0.7" letter-spacing="0.5">Chart your storage terrain.</text>
+
+  <!-- Module badge -->
+  <rect x="476" y="118" width="132" height="24" rx="12" fill="white" opacity="0.12"/>
+  <text x="542" y="134" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif"
+    font-size="12" fill="white" opacity="0.8" letter-spacing="0.5">PowerShell Module</text>
+
+  <!-- Decorative dots top right (matching Ranger) -->
+  <g fill="white" opacity="0.15">
+    <circle cx="580" cy="28" r="3"/>
+    <circle cx="595" cy="28" r="3"/>
+    <circle cx="610" cy="28" r="3"/>
+    <circle cx="587" cy="42" r="3"/>
+    <circle cx="602" cy="42" r="3"/>
+    <circle cx="617" cy="42" r="3"/>
+  </g>
+</svg>

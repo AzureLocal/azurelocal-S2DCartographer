@@ -1,4 +1,6 @@
-# S2DCartographer
+<p align="center">
+  <img src="docs/assets/images/s2dcartographer-banner.svg" alt="S2D Cartographer" width="640"/>
+</p>
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![PowerShell: 7.x](https://img.shields.io/badge/PowerShell-7.x-3b82f6)](https://github.com/PowerShell/PowerShell)
