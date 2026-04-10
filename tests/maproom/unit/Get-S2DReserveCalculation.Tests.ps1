@@ -105,10 +105,11 @@ Describe 'Get-S2DReserveCalculation' {
     }
 
     Context 'Status = Critical (free < 50% of recommended)' {
-        It '3-node: free=2TB (< 50% of 11.52TB) => Critical' {
+        It '3-node: free=2TB is Critical' {
             InModuleScope S2DCartographer {
-                (Get-S2DReserveCalculation -NodeCount 3 -LargestCapacityDriveSizeBytes ([int64]3840000000000) -PoolFreeBytes ([int64]2000000000000)).Status | Should -Be 'Critical'
-                (Get-S2DReserveCalculation -NodeCount 3 -LargestCapacityDriveSizeBytes ([int64]3840000000000) -PoolFreeBytes ([int64]2000000000000)).IsAdequate | Should -BeFalse
+                $r = Get-S2DReserveCalculation -NodeCount 3 -LargestCapacityDriveSizeBytes ([int64]3840000000000) -PoolFreeBytes ([int64]2000000000000)
+                $r.Status     | Should -Be 'Critical'
+                $r.IsAdequate | Should -BeFalse
             }
         }
         It 'PoolFreeBytes=0 => Critical' {
