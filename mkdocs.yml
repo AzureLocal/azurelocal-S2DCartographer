@@ -7,6 +7,8 @@ repo_name: AzureLocal/azurelocal-S2DCartographer
 
 theme:
   name: material
+  logo: assets/images/s2dcartographer-icon.svg
+  favicon: assets/images/s2dcartographer-icon.svg
   features:
     - navigation.tabs
     - navigation.sections
@@ -16,8 +18,8 @@ theme:
     - search.suggest
   palette:
     - scheme: default
-      primary: deep orange
-      accent: orange
+      primary: blue
+      accent: teal
 
 markdown_extensions:
   - admonition
