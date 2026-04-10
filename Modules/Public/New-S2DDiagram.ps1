@@ -13,6 +13,9 @@ function New-S2DDiagram {
           Resiliency    — Per-volume fault domain copy distribution
           HealthCard    — Traffic-light SVG health scorecard
           TiBTBReference — Common drive sizes in both units
+
+        Output files are written to OutputDirectory (default: C:\S2DCartographer).
+        Execution logs are written to LogDirectory (default: C:\S2DCartographer\logs).
     #>
     [CmdletBinding()]
     param(
@@ -24,7 +27,10 @@ function New-S2DDiagram {
         [string[]] $DiagramType = 'All',
 
         [Parameter()]
-        [string] $OutputPath
+        [string] $OutputDirectory = 'C:\S2DCartographer',
+
+        [Parameter()]
+        [string] $LogDirectory = 'C:\S2DCartographer\logs'
     )
 
     throw "New-S2DDiagram is not implemented yet. This is a Phase 4 deliverable. See the project plan for the roadmap."

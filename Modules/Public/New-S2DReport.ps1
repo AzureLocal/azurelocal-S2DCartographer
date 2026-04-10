@@ -8,6 +8,9 @@ function New-S2DReport {
 
         Will accept S2DClusterData from the pipeline (output of Invoke-S2DCartographer -PassThru)
         and render publication-quality reports with embedded diagrams.
+
+        Output files are written to OutputDirectory (default: C:\S2DCartographer).
+        Execution logs are written to LogDirectory (default: C:\S2DCartographer\logs).
     #>
     [CmdletBinding()]
     param(
@@ -19,10 +22,10 @@ function New-S2DReport {
         [string[]] $Format,
 
         [Parameter()]
-        [string] $OutputPath,
+        [string] $OutputDirectory = 'C:\S2DCartographer',
 
         [Parameter()]
-        [string] $OutputDirectory,
+        [string] $LogDirectory = 'C:\S2DCartographer\logs',
 
         [Parameter()]
         [string] $Author,

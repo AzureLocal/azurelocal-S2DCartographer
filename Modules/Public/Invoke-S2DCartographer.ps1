@@ -8,6 +8,9 @@ function Invoke-S2DCartographer {
 
         Will orchestrate all collectors, run health checks, compute the capacity waterfall,
         and generate reports and diagrams in a single call.
+
+        Output files are written to OutputDirectory (default: C:\S2DCartographer).
+        Execution logs are written to LogDirectory (default: C:\S2DCartographer\logs).
     #>
     [CmdletBinding()]
     param(
@@ -30,7 +33,10 @@ function Invoke-S2DCartographer {
         [string] $SecretName,
 
         [Parameter()]
-        [string] $OutputDirectory,
+        [string] $OutputDirectory = 'C:\S2DCartographer',
+
+        [Parameter()]
+        [string] $LogDirectory = 'C:\S2DCartographer\logs',
 
         [Parameter()]
         [ValidateSet('Html', 'Word', 'Pdf', 'Excel', 'All')]
