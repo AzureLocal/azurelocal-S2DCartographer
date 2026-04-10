@@ -27,7 +27,7 @@ Describe 'ConvertTo-S2DCapacity' {
 
         It 'returns an S2DCapacity object' {
             $result = ConvertTo-S2DCapacity -Bytes 3840000000000
-            $result | Should -BeOfType 'S2DCapacity'
+            $result.GetType().Name | Should -Be 'S2DCapacity'
         }
 
         It 'sets the Bytes property exactly' {

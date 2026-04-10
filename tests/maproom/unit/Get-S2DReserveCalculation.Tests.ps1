@@ -108,8 +108,7 @@ Describe 'Get-S2DReserveCalculation' {
         It '3-node: free=2TB (< 50% of 11.52TB) => Critical' {
             InModuleScope S2DCartographer {
                 $r = Get-S2DReserveCalculation -NodeCount 3 -LargestCapacityDriveSizeBytes ([int64]3840000000000) -PoolFreeBytes ([int64]2000000000000)
-                $r.Status     | Should -Be 'Critical'
-                $r.IsAdequate | Should -BeFalse
+                $r.Status | Should -Be 'Critical'; $r.IsAdequate | Should -Be $false
             }
         }
         It 'PoolFreeBytes=0 => Critical' {
@@ -135,8 +134,7 @@ Describe 'Get-S2DReserveCalculation' {
         It 'ReserveRecommended and ReserveActual are S2DCapacity objects' {
             InModuleScope S2DCartographer {
                 $r = Get-S2DReserveCalculation -NodeCount 4 -LargestCapacityDriveSizeBytes ([int64]3840000000000) -PoolFreeBytes ([int64]20000000000000)
-                $r.ReserveRecommended | Should -BeOfType 'S2DCapacity'
-                $r.ReserveActual      | Should -BeOfType 'S2DCapacity'
+                $r.ReserveRecommended.GetType().Name | Should -Be 'S2DCapacity'; $r.ReserveActual.GetType().Name | Should -Be 'S2DCapacity'
             }
         }
         It 'ReserveActualBytes = PoolFreeBytes' {
