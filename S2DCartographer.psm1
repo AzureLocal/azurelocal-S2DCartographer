@@ -32,8 +32,21 @@ $Script:S2DSession = @{
 }
 
 Export-ModuleMember -Function @(
+    # Connectivity
     'Connect-S2DCluster',
     'Disconnect-S2DCluster',
+    # Collectors
     'Get-S2DPhysicalDiskInventory',
-    'ConvertTo-S2DCapacity'
+    'Get-S2DStoragePoolInfo',
+    'Get-S2DVolumeMap',
+    'Get-S2DCacheTierInfo',
+    'Get-S2DCapacityWaterfall',
+    'Get-S2DHealthStatus',
+    # Utilities
+    'ConvertTo-S2DCapacity',
+    # Orchestrator
+    'Invoke-S2DCartographer',
+    # Output
+    'New-S2DReport',
+    'New-S2DDiagram'
 )

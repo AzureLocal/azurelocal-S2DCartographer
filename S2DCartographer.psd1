@@ -1,6 +1,6 @@
 @{
     RootModule           = 'S2DCartographer.psm1'
-    ModuleVersion        = '0.1.0'
+    ModuleVersion        = '1.0.0'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
     Author               = 'Azure Local Cloud'
@@ -13,7 +13,15 @@
         'Connect-S2DCluster',
         'Disconnect-S2DCluster',
         'Get-S2DPhysicalDiskInventory',
-        'ConvertTo-S2DCapacity'
+        'Get-S2DStoragePoolInfo',
+        'Get-S2DVolumeMap',
+        'Get-S2DCacheTierInfo',
+        'Get-S2DCapacityWaterfall',
+        'Get-S2DHealthStatus',
+        'ConvertTo-S2DCapacity',
+        'Invoke-S2DCartographer',
+        'New-S2DReport',
+        'New-S2DDiagram'
     )
     CmdletsToExport      = @()
     VariablesToExport    = @()
@@ -38,7 +46,7 @@
             ProjectUri   = 'https://azurelocal.cloud/azurelocal-s2dcartographer/'
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-S2DCartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-S2DCartographer/main/docs/assets/images/s2dcartographer-icon.svg'
-            Prerelease   = 'preview2'
+            # Prerelease = ''  # Remove for stable release
             ReleaseNotes = @'
 ## v0.1.0-preview2 — Bug fix: non-domain-joined connectivity
 

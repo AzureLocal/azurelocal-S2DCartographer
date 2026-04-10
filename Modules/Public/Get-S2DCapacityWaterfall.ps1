@@ -4,22 +4,170 @@ function Get-S2DCapacityWaterfall {
         Computes the 8-stage capacity waterfall from raw physical to final usable capacity.
 
     .DESCRIPTION
-        Phase 2 — Not yet implemented.
+        Performs the complete S2D capacity accounting pipeline:
 
-        Will compute:
-          Stage 1: Raw physical capacity (capacity-tier disks only)
-          Stage 2: After vendor TB labeling → TiB adjustment
-          Stage 3: After storage pool overhead (~0.5-1%)
-          Stage 4: After reserve space (min(NodeCount,4) × largest capacity drive)
-          Stage 5: After infrastructure volume
-          Stage 6: Available for workload volumes
-          Stage 7: After resiliency overhead (per volume, mixed resiliency supported)
-          Stage 8: Final usable capacity
+          Stage 1  Raw physical capacity — capacity-tier disks only (cache excluded)
+          Stage 2  After vendor TB-label → TiB adjustment (1 TB = 0.909 TiB)
+          Stage 3  After storage pool overhead (~1%)
+          Stage 4  After reserve space (min(NodeCount,4) × largest capacity drive)
+          Stage 5  After infrastructure volume (Azure Local infra CSV)
+          Stage 6  Available for workload volumes
+          Stage 7  After resiliency overhead (per-volume, supports mixed types)
+          Stage 8  Final usable capacity
 
-        Also reports expected vs actual for reserve space and overcommit status.
+        Uses data already collected by the other Get-S2D* cmdlets when available,
+        or runs the collectors itself.
+
+    .EXAMPLE
+        Get-S2DCapacityWaterfall
+
+    .EXAMPLE
+        Get-S2DCapacityWaterfall | Select-Object -ExpandProperty Stages | Format-Table
+
+    .OUTPUTS
+        S2DCapacityWaterfall
     #>
     [CmdletBinding()]
+    [OutputType([S2DCapacityWaterfall])]
     param()
 
-    throw "Get-S2DCapacityWaterfall is not implemented yet. This is a Phase 2 deliverable. See the project plan for the roadmap."
+    # ── Gather prerequisite data from cache or live queries ───────────────────
+    $physDisks = @($Script:S2DSession.CollectedData['PhysicalDisks'])
+    if (-not $physDisks) {
+        Write-Verbose "Collecting physical disk data for waterfall."
+        $physDisks = @(Get-S2DPhysicalDiskInventory)
+    }
+
+    $pool = $Script:S2DSession.CollectedData['StoragePool']
+    if (-not $pool) {
+        Write-Verbose "Collecting storage pool data for waterfall."
+        $pool = Get-S2DStoragePoolInfo
+    }
+
+    $volumes = @($Script:S2DSession.CollectedData['Volumes'])
+    if (-not $volumes) {
+        Write-Verbose "Collecting volume data for waterfall."
+        $volumes = @(Get-S2DVolumeMap)
+    }
+
+    $nodeCount = if ($Script:S2DSession.Nodes.Count -gt 0) { $Script:S2DSession.Nodes.Count } else {
+        # Estimate from disk symmetry
+        $perNode = @($physDisks | Group-Object NodeName)
+        if ($perNode.Count -gt 0) { $perNode.Count } else { 4 }
+    }
+
+    # ── Stage 1: Raw physical capacity (capacity-tier only, cache excluded) ───
+    $capacityDisks = @($physDisks | Where-Object { $_.Role -eq 'Capacity' })
+    if (-not $capacityDisks) {
+        # Fall back: all non-Journal disks
+        $capacityDisks = @($physDisks | Where-Object { $_.Usage -ne 'Journal' -and $_.Usage -ne 'Retired' })
+    }
+
+    $stage1Bytes = [int64]($capacityDisks | Measure-Object -Property SizeBytes -Sum).Sum
+    $largestDriveBytes = [int64]($capacityDisks | Measure-Object -Property SizeBytes -Maximum).Maximum
+
+    # ── Stage 2: TB-label → TiB adjustment ───────────────────────────────────
+    # Vendor labels drives in decimal (1 TB = 1,000,000,000,000 bytes).
+    # Windows reports in binary (1 TiB = 1,099,511,627,776 bytes).
+    # The raw bytes ARE the binary value — the "adjustment" is conceptual: we show
+    # what the vendor advertises vs what Windows sees.
+    $vendorLabeledTB = [math]::Round($stage1Bytes / 1000000000000, 2)
+    $stage2Bytes     = $stage1Bytes   # bytes don't change; this stage is for display clarity
+
+    # ── Stage 3: Pool overhead (~1%) ──────────────────────────────────────────
+    $poolTotalBytes  = if ($pool -and $pool.TotalSize) { $pool.TotalSize.Bytes } else { $stage2Bytes }
+    $stage3Bytes     = $poolTotalBytes
+    $poolOverheadBytes = $stage2Bytes - $stage3Bytes
+
+    # ── Stage 4: Reserve space ────────────────────────────────────────────────
+    $reserveCalc     = Get-S2DReserveCalculation -NodeCount $nodeCount `
+                           -LargestCapacityDriveSizeBytes $largestDriveBytes `
+                           -PoolFreeBytes ($pool ? $pool.RemainingSize.Bytes : 0)
+
+    $reserveBytes    = $reserveCalc.ReserveRecommendedBytes
+    $stage4Bytes     = $stage3Bytes - $reserveBytes
+
+    # ── Stage 5: Infrastructure volume ───────────────────────────────────────
+    $infraVolumes    = @($volumes | Where-Object IsInfrastructureVolume)
+    $infraBytes      = [int64]0
+    foreach ($iv in $infraVolumes) {
+        if ($iv.FootprintOnPool) { $infraBytes += $iv.FootprintOnPool.Bytes }
+        elseif ($iv.Size)        { $infraBytes += $iv.Size.Bytes }
+    }
+    $stage5Bytes = $stage4Bytes - $infraBytes
+
+    # ── Stage 6: Available for workload volumes ───────────────────────────────
+    $stage6Bytes = $stage5Bytes
+
+    # ── Stage 7: After resiliency overhead (per workload volume) ─────────────
+    $workloadVolumes = @($volumes | Where-Object { -not $_.IsInfrastructureVolume })
+    $totalFootprintBytes = [int64]0
+    $totalUsableBytes    = [int64]0
+    $blendedEff          = 0.0
+
+    foreach ($vol in $workloadVolumes) {
+        $fp   = if ($vol.FootprintOnPool) { $vol.FootprintOnPool.Bytes } else { [int64]0 }
+        $size = if ($vol.Size)            { $vol.Size.Bytes }            else { [int64]0 }
+        $totalFootprintBytes += $fp
+        $totalUsableBytes    += $size
+    }
+
+    $stage7Bytes = if ($totalFootprintBytes -gt 0) { $stage6Bytes - $totalFootprintBytes } else { $stage6Bytes }
+
+    # Blended efficiency across all workload volumes
+    $blendedEff = if ($workloadVolumes.Count -gt 0) {
+        [math]::Round(
+            ($workloadVolumes | Measure-Object -Property EfficiencyPercent -Average).Average,
+            1
+        )
+    } else { 0.0 }
+
+    # ── Stage 8: Final usable capacity ────────────────────────────────────────
+    $stage8Bytes = $totalUsableBytes
+
+    # ── Overcommit detection ──────────────────────────────────────────────────
+    $isOvercommitted = $pool -and $pool.OvercommitRatio -gt 1.0
+    $overcommitRatio = if ($pool) { $pool.OvercommitRatio } else { 0.0 }
+
+    # ── Build stage objects ───────────────────────────────────────────────────
+    function local:New-WaterfallStage {
+        param([int]$Stage, [string]$Name, [int64]$Bytes, [int64]$PrevBytes, [string]$Description, [string]$Status = 'OK')
+        $s = [S2DWaterfallStage]::new()
+        $s.Stage       = $Stage
+        $s.Name        = $Name
+        $s.Size        = if ($Bytes -gt 0) { [S2DCapacity]::new($Bytes) } else { [S2DCapacity]::new([int64]0) }
+        $s.Delta       = if ($PrevBytes -gt $Bytes -and $PrevBytes -gt 0) { [S2DCapacity]::new($PrevBytes - $Bytes) } else { $null }
+        $s.Description = $Description
+        $s.Status      = $Status
+        $s
+    }
+
+    $reserveStatus = $reserveCalc.Status
+    $stage4Status  = switch ($reserveStatus) { 'Adequate' { 'OK' } 'Warning' { 'Warning' } default { 'Critical' } }
+
+    $stages = @(
+        (New-WaterfallStage 1 'Raw Physical'        $stage1Bytes $stage1Bytes   "Sum of capacity-tier disk sizes ($($capacityDisks.Count) drives × $('{0:N2}' -f ($largestDriveBytes/1TB)) TB)"),
+        (New-WaterfallStage 2 'Vendor Label (TB)'   $stage2Bytes $stage1Bytes   "Vendor labels drives in decimal TB; Windows reports binary TiB. Raw: $vendorLabeledTB TB labeled"),
+        (New-WaterfallStage 3 'Pool (after overhead)' $stage3Bytes $stage2Bytes "Storage pool overhead. Pool total: $(if($pool){"$($pool.TotalSize.TiB) TiB"} else {"N/A"})"),
+        (New-WaterfallStage 4 'After Reserve'       $stage4Bytes $stage3Bytes   "Reserve: min($nodeCount,4)×$('{0:N2}' -f ($largestDriveBytes/1TB)) TB = $('{0:N2}' -f ($reserveBytes/1TB)) TB" $stage4Status),
+        (New-WaterfallStage 5 'After Infra Volume'  $stage5Bytes $stage4Bytes   "Infrastructure volume footprint: $(if($infraBytes -gt 0){"$([math]::Round($infraBytes/1073741824,1)) GiB"} else {"None detected"})"),
+        (New-WaterfallStage 6 'Available'           $stage6Bytes $stage5Bytes   "Pool space available for workload volumes"),
+        (New-WaterfallStage 7 'After Resiliency'    $stage7Bytes $stage6Bytes   "Resiliency overhead for $($workloadVolumes.Count) workload volume(s). Blended efficiency: $blendedEff%"),
+        (New-WaterfallStage 8 'Final Usable'        $stage8Bytes $stage7Bytes   "Final usable capacity across all workload volumes")
+    )
+
+    $waterfall = [S2DCapacityWaterfall]::new()
+    $waterfall.Stages                   = $stages
+    $waterfall.RawCapacity              = [S2DCapacity]::new($stage1Bytes)
+    $waterfall.UsableCapacity           = if ($stage8Bytes -gt 0) { [S2DCapacity]::new($stage8Bytes) } else { [S2DCapacity]::new([int64]0) }
+    $waterfall.ReserveRecommended       = $reserveCalc.ReserveRecommended
+    $waterfall.ReserveActual            = $reserveCalc.ReserveActual
+    $waterfall.ReserveStatus            = $reserveStatus
+    $waterfall.IsOvercommitted          = $isOvercommitted
+    $waterfall.OvercommitRatio          = $overcommitRatio
+    $waterfall.NodeCount                = $nodeCount
+    $waterfall.BlendedEfficiencyPercent = $blendedEff
+
+    $Script:S2DSession.CollectedData['CapacityWaterfall'] = $waterfall
+    $waterfall
 }

@@ -1,19 +1,297 @@
 function Get-S2DHealthStatus {
     <#
     .SYNOPSIS
-        Runs all S2D health checks and returns pass/fail results with severity.
+        Runs all S2D health checks and returns pass/warn/fail results with severity.
 
     .DESCRIPTION
-        Phase 2 — Not yet implemented.
+        Executes 10 health checks covering reserve adequacy, disk symmetry, volume health,
+        disk health, NVMe wear, thin overcommit, firmware consistency, rebuild capacity,
+        infrastructure volume presence, and cache tier health.
 
-        Will run 10+ health checks including reserve adequacy, disk symmetry, volume health,
-        NVMe wear, thin overcommit, firmware consistency, rebuild capacity, and cache health.
+        Uses already-collected data from the session cache where available. Run the
+        collector cmdlets first for best results, or they will be invoked automatically.
+
+        Requires an active session established with Connect-S2DCluster.
+
+    .PARAMETER CheckName
+        Limit results to one or more specific check names.
+
+    .EXAMPLE
+        Get-S2DHealthStatus
+
+    .EXAMPLE
+        Get-S2DHealthStatus | Where-Object Status -ne 'Pass' | Format-List
+
+    .OUTPUTS
+        S2DHealthCheck[]
     #>
     [CmdletBinding()]
+    [OutputType([S2DHealthCheck])]
     param(
         [Parameter()]
         [string[]] $CheckName
     )
 
-    throw "Get-S2DHealthStatus is not implemented yet. This is a Phase 2 deliverable. See the project plan for the roadmap."
+    # ── Gather prerequisite data ──────────────────────────────────────────────
+    $physDisks = @($Script:S2DSession.CollectedData['PhysicalDisks'])
+    if (-not $physDisks) { $physDisks = @(Get-S2DPhysicalDiskInventory) }
+
+    $pool = $Script:S2DSession.CollectedData['StoragePool']
+    if (-not $pool) { $pool = Get-S2DStoragePoolInfo }
+
+    $volumes = @($Script:S2DSession.CollectedData['Volumes'])
+    if (-not $volumes) { $volumes = @(Get-S2DVolumeMap) }
+
+    $cacheTier = $Script:S2DSession.CollectedData['CacheTier']
+    if (-not $cacheTier) { $cacheTier = Get-S2DCacheTierInfo }
+
+    $waterfall = $Script:S2DSession.CollectedData['CapacityWaterfall']
+    if (-not $waterfall) { $waterfall = Get-S2DCapacityWaterfall }
+
+    $nodeCount = if ($Script:S2DSession.Nodes.Count -gt 0) { $Script:S2DSession.Nodes.Count } else { 4 }
+
+    # ── Helper ────────────────────────────────────────────────────────────────
+    function local:New-HealthCheck {
+        param([string]$Name, [string]$Severity, [string]$Status, [string]$Details, [string]$Remediation)
+        $hc = [S2DHealthCheck]::new()
+        $hc.CheckName   = $Name
+        $hc.Severity    = $Severity
+        $hc.Status      = $Status
+        $hc.Details     = $Details
+        $hc.Remediation = $Remediation
+        $hc
+    }
+
+    $checks = [System.Collections.Generic.List[S2DHealthCheck]]::new()
+
+    # ── Check 1: Reserve adequacy ─────────────────────────────────────────────
+    $check1 = if ($waterfall) {
+        switch ($waterfall.ReserveStatus) {
+            'Adequate' {
+                New-HealthCheck 'ReserveAdequacy' 'Critical' 'Pass' `
+                    "Reserve space is adequate. Actual: $($waterfall.ReserveActual.TiB) TiB, Recommended: $($waterfall.ReserveRecommended.TiB) TiB." `
+                    "No action required."
+            }
+            'Warning' {
+                New-HealthCheck 'ReserveAdequacy' 'Critical' 'Warn' `
+                    "Reserve space is below recommendation. Actual: $($waterfall.ReserveActual.TiB) TiB, Recommended: $($waterfall.ReserveRecommended.TiB) TiB." `
+                    "Free pool space by deleting or shrinking volumes, or add capacity drives to the pool."
+            }
+            default {
+                New-HealthCheck 'ReserveAdequacy' 'Critical' 'Fail' `
+                    "Reserve space is critically low. Actual: $($waterfall.ReserveActual.TiB) TiB, Recommended: $($waterfall.ReserveRecommended.TiB) TiB." `
+                    "Immediately free pool space. The cluster cannot sustain a drive failure and full rebuild."
+            }
+        }
+    }
+    else {
+        New-HealthCheck 'ReserveAdequacy' 'Critical' 'Warn' 'Could not determine reserve status — no waterfall data.' 'Run Get-S2DCapacityWaterfall to evaluate reserve space.'
+    }
+    $checks.Add($check1)
+
+    # ── Check 2: Disk symmetry ────────────────────────────────────────────────
+    $byNode = @($physDisks | Group-Object NodeName)
+    $diskSymmetryOk = $true
+    $symmetryDetail = ''
+    if ($byNode.Count -gt 1) {
+        $counts = $byNode | Select-Object Name, Count
+        $uniqueCounts = @($counts | Select-Object -ExpandProperty Count | Select-Object -Unique)
+        if ($uniqueCounts.Count -gt 1) {
+            $diskSymmetryOk = $false
+            $symmetryDetail = ($counts | ForEach-Object { "$($_.Name)=$($_.Count) disks" }) -join ', '
+        }
+    }
+    $check2 = if ($diskSymmetryOk) {
+        New-HealthCheck 'DiskSymmetry' 'Warning' 'Pass' `
+            "All nodes have a consistent disk count ($($byNode | Select-Object -First 1 -ExpandProperty Count) disks per node)." `
+            "No action required."
+    } else {
+        New-HealthCheck 'DiskSymmetry' 'Warning' 'Warn' `
+            "Disk count is inconsistent across nodes: $symmetryDetail" `
+            "Investigate missing or additional disks. S2D requires symmetric disk configurations across nodes."
+    }
+    $checks.Add($check2)
+
+    # ── Check 3: Volume health ────────────────────────────────────────────────
+    $degradedVolumes = @($volumes | Where-Object {
+        $_.HealthStatus -ne 'Healthy' -or
+        ($_.OperationalStatus -notin 'OK','InService','Online')
+    })
+    $check3 = if ($degradedVolumes.Count -eq 0) {
+        New-HealthCheck 'VolumeHealth' 'Critical' 'Pass' `
+            "All $($volumes.Count) volume(s) are healthy." `
+            "No action required."
+    } else {
+        $labels = ($degradedVolumes | ForEach-Object { "$($_.FriendlyName) [$($_.HealthStatus)/$($_.OperationalStatus)]" }) -join ', '
+        New-HealthCheck 'VolumeHealth' 'Critical' 'Fail' `
+            "Degraded or detached volume(s) detected: $labels" `
+            "Run Get-VirtualDisk to investigate. Check cluster event logs and storage health reports."
+    }
+    $checks.Add($check3)
+
+    # ── Check 4: Disk health ──────────────────────────────────────────────────
+    $unhealthyDisks = @($physDisks | Where-Object { $_.HealthStatus -ne 'Healthy' })
+    $check4 = if ($unhealthyDisks.Count -eq 0) {
+        New-HealthCheck 'DiskHealth' 'Critical' 'Pass' `
+            "All $($physDisks.Count) physical disk(s) are healthy." `
+            "No action required."
+    } else {
+        $labels = ($unhealthyDisks | ForEach-Object { "$($_.NodeName)/$($_.FriendlyName) [$($_.HealthStatus)]" }) -join ', '
+        New-HealthCheck 'DiskHealth' 'Critical' 'Fail' `
+            "Non-healthy disk(s) detected: $labels" `
+            "Replace failed or degraded disks promptly. Check Get-PhysicalDisk -HasMediaFailure."
+    }
+    $checks.Add($check4)
+
+    # ── Check 5: NVMe wear ────────────────────────────────────────────────────
+    $wornDisks = @($physDisks | Where-Object {
+        $_.MediaType -eq 'NVMe' -and $null -ne $_.WearPercentage -and $_.WearPercentage -gt 80
+    })
+    $check5 = if ($wornDisks.Count -eq 0) {
+        New-HealthCheck 'NVMeWear' 'Warning' 'Pass' `
+            "No NVMe drives exceed 80% wear threshold." `
+            "No action required. Monitor wear percentage with Get-S2DPhysicalDiskInventory."
+    } else {
+        $labels = ($wornDisks | ForEach-Object { "$($_.FriendlyName) [$($_.WearPercentage)%]" }) -join ', '
+        New-HealthCheck 'NVMeWear' 'Warning' 'Warn' `
+            "NVMe drive(s) with wear > 80%: $labels" `
+            "Plan replacement for high-wear NVMe drives before they reach 100% (end of rated write endurance)."
+    }
+    $checks.Add($check5)
+
+    # ── Check 6: Thin overcommit ──────────────────────────────────────────────
+    $isOvercommitted = $pool -and $pool.OvercommitRatio -gt 1.0
+    $check6 = if (-not $isOvercommitted) {
+        New-HealthCheck 'ThinOvercommit' 'Warning' 'Pass' `
+            "Pool is not overcommitted. Overcommit ratio: $(if($pool){"$($pool.OvercommitRatio)x"} else {"N/A"})." `
+            "No action required."
+    } else {
+        New-HealthCheck 'ThinOvercommit' 'Warning' 'Warn' `
+            "Pool is overcommitted. Provisioned: $($pool.ProvisionedSize.TiB) TiB, Pool total: $($pool.TotalSize.TiB) TiB (ratio: $($pool.OvercommitRatio)x)." `
+            "Monitor actual data growth. Thin-provisioned volumes can run out of pool space unexpectedly. Add capacity or reduce provisioned sizes."
+    }
+    $checks.Add($check6)
+
+    # ── Check 7: Firmware consistency ─────────────────────────────────────────
+    $firmwareInconsistent = $false
+    $firmwareDetail = ''
+    $byModel = $physDisks | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Model) } | Group-Object Model
+    foreach ($modelGroup in $byModel) {
+        $fwVersions = @($modelGroup.Group | Select-Object -ExpandProperty FirmwareVersion | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
+        if ($fwVersions.Count -gt 1) {
+            $firmwareInconsistent = $true
+            $firmwareDetail += "Model '$($modelGroup.Name)': $($fwVersions -join ', '). "
+        }
+    }
+    $check7 = if (-not $firmwareInconsistent) {
+        New-HealthCheck 'FirmwareConsistency' 'Info' 'Pass' `
+            "All disks of the same model are on consistent firmware." `
+            "No action required."
+    } else {
+        New-HealthCheck 'FirmwareConsistency' 'Info' 'Warn' `
+            "Firmware inconsistency detected: $($firmwareDetail.Trim())" `
+            "Update all drives of the same model to the latest firmware. Use the vendor update tool or Dell/HPE/Lenovo HCI management utilities."
+    }
+    $checks.Add($check7)
+
+    # ── Check 8: Rebuild capacity ─────────────────────────────────────────────
+    # Cluster can survive a node failure and fully rebuild if:
+    # free pool space >= (total data on largest node's disks × resiliency copies)
+    $rebuildOk = $true
+    $rebuildDetail = ''
+    if ($pool -and $pool.RemainingSize -and $pool.AllocatedSize) {
+        $freeBytes  = $pool.RemainingSize.Bytes
+        $largestNodeDiskBytes = [int64](
+            @($physDisks | Group-Object NodeName) |
+            ForEach-Object { ($_.Group | Measure-Object -Property SizeBytes -Sum).Sum } |
+            Measure-Object -Maximum
+        ).Maximum
+
+        if ($freeBytes -lt $largestNodeDiskBytes) {
+            $rebuildOk     = $false
+            $rebuildDetail = "Free pool space ($([math]::Round($freeBytes/1TB,2)) TB) is less than largest node's disk capacity ($([math]::Round($largestNodeDiskBytes/1TB,2)) TB). Rebuild after a node failure may not complete."
+        }
+        else {
+            $rebuildDetail = "Free pool space ($([math]::Round($freeBytes/1TB,2)) TB) is sufficient to absorb loss of the largest node ($([math]::Round($largestNodeDiskBytes/1TB,2)) TB)."
+        }
+    }
+    else {
+        $rebuildDetail = 'Pool data unavailable — could not evaluate rebuild capacity.'
+    }
+    $check8 = if ($rebuildOk) {
+        New-HealthCheck 'RebuildCapacity' 'Critical' 'Pass' $rebuildDetail "No action required."
+    } else {
+        New-HealthCheck 'RebuildCapacity' 'Critical' 'Warn' $rebuildDetail `
+            "Free pool space by removing or shrinking volumes. Consider adding capacity drives."
+    }
+    $checks.Add($check8)
+
+    # ── Check 9: Infrastructure volume ────────────────────────────────────────
+    $infraVolumes = @($volumes | Where-Object IsInfrastructureVolume)
+    $check9 = if ($infraVolumes.Count -gt 0) {
+        $healthyInfra = @($infraVolumes | Where-Object { $_.HealthStatus -eq 'Healthy' })
+        if ($healthyInfra.Count -eq $infraVolumes.Count) {
+            New-HealthCheck 'InfrastructureVolume' 'Info' 'Pass' `
+                "Infrastructure volume(s) present and healthy: $(($infraVolumes | Select-Object -ExpandProperty FriendlyName) -join ', ')." `
+                "No action required."
+        }
+        else {
+            New-HealthCheck 'InfrastructureVolume' 'Info' 'Warn' `
+                "Infrastructure volume detected but not fully healthy: $(($infraVolumes | ForEach-Object {"$($_.FriendlyName) [$($_.HealthStatus)]"}) -join ', ')." `
+                "Investigate with Get-VirtualDisk. Azure Local management plane may be degraded."
+        }
+    } else {
+        New-HealthCheck 'InfrastructureVolume' 'Info' 'Warn' `
+            "No infrastructure volume detected. Expected on Azure Local clusters." `
+            "This may be normal for Windows Server S2D. On Azure Local, check cluster deployment status."
+    }
+    $checks.Add($check9)
+
+    # ── Check 10: Cache tier health ───────────────────────────────────────────
+    $check10 = if (-not $cacheTier) {
+        New-HealthCheck 'CacheTierHealth' 'Warning' 'Warn' `
+            "Cache tier data unavailable." `
+            "Run Get-S2DCacheTierInfo to evaluate cache health."
+    } elseif ($cacheTier.CacheState -eq 'Degraded') {
+        New-HealthCheck 'CacheTierHealth' 'Warning' 'Warn' `
+            "Cache tier is degraded. Cache state: $($cacheTier.CacheState). Cache disks: $($cacheTier.CacheDiskCount)." `
+            "Check cache disk health with Get-S2DPhysicalDiskInventory. Replace failed cache drives promptly to restore write performance."
+    } elseif ($cacheTier.IsAllFlash -and $cacheTier.SoftwareCacheEnabled) {
+        New-HealthCheck 'CacheTierHealth' 'Warning' 'Pass' `
+            "All-flash cluster with software write-back cache enabled. Cache mode: $($cacheTier.CacheMode)." `
+            "No action required. Software cache is managed by S2D automatically."
+    } elseif ($cacheTier.CacheState -eq 'Active') {
+        New-HealthCheck 'CacheTierHealth' 'Warning' 'Pass' `
+            "Cache tier is active. Mode: $($cacheTier.CacheMode), $($cacheTier.CacheDiskCount) cache disk(s), ratio: $($cacheTier.CacheToCapacityRatio):1." `
+            "No action required."
+    } else {
+        New-HealthCheck 'CacheTierHealth' 'Warning' 'Warn' `
+            "Cache tier state is '$($cacheTier.CacheState)'. Mode: $($cacheTier.CacheMode)." `
+            "Investigate cache tier with Get-ClusterS2D and Get-PhysicalDisk."
+    }
+    $checks.Add($check10)
+
+    # ── Filter by CheckName ───────────────────────────────────────────────────
+    $result = if ($CheckName) {
+        @($checks | Where-Object { $_.CheckName -in $CheckName })
+    }
+    else {
+        @($checks)
+    }
+
+    # ── Overall health rollup ─────────────────────────────────────────────────
+    $overallHealth = if (@($result | Where-Object { $_.Status -eq 'Fail' -and $_.Severity -eq 'Critical' }).Count -gt 0) {
+        'Critical'
+    }
+    elseif (@($result | Where-Object { $_.Status -in 'Fail','Warn' }).Count -gt 0) {
+        'Warning'
+    }
+    else {
+        'Healthy'
+    }
+
+    $Script:S2DSession.CollectedData['HealthChecks']   = $result
+    $Script:S2DSession.CollectedData['OverallHealth']  = $overallHealth
+
+    $result
 }
