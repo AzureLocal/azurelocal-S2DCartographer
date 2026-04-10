@@ -38,13 +38,21 @@
             ProjectUri   = 'https://azurelocal.cloud/azurelocal-s2dcartographer/'
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-S2DCartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-S2DCartographer/main/docs/assets/images/s2dcartographer-icon.svg'
-            Prerelease   = 'preview1'
+            Prerelease   = 'preview2'
             ReleaseNotes = @'
+## v0.1.0-preview2 — Bug fix: non-domain-joined connectivity
+
+### Bug Fixes
+- Fixed Connect-S2DCluster failing on non-domain-joined management machines.
+  S2D validation now uses Get-StoragePool via CIM instead of Get-ClusterS2D,
+  which required the local FailoverClusters RSAT module.
+- Fixed cluster node discovery to use MSCluster_Node CIM class via remote
+  session instead of Get-ClusterNode (also requires local RSAT).
+
 ## v0.1.0-preview1 — Foundation preview
 
-Preview release focused on the implemented Phase 1 foundation surface:
-S2DCapacity class, ConvertTo-S2DCapacity, Connect-S2DCluster,
-Disconnect-S2DCluster, and Get-S2DPhysicalDiskInventory.
+Phase 1 foundation: S2DCapacity class, ConvertTo-S2DCapacity,
+Connect-S2DCluster, Disconnect-S2DCluster, and Get-S2DPhysicalDiskInventory.
 '@
         }
     }

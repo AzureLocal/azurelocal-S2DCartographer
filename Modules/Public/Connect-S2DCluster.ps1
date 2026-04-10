@@ -131,17 +131,21 @@ function Connect-S2DCluster {
     }
 
     # Validate that S2D is enabled on the target
+    # Uses Get-StoragePool via CIM/remoting — avoids requiring local FailoverClusters RSAT module
     try {
-        $s2dCheck = if ($Script:S2DSession.IsLocal) {
-            Get-ClusterS2D -ErrorAction Stop
+        $s2dPool = if ($Script:S2DSession.IsLocal) {
+            Get-StoragePool -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -ne 'Primordial' }
         } elseif ($Script:S2DSession.CimSession) {
-            Get-ClusterS2D -CimSession $Script:S2DSession.CimSession -ErrorAction Stop
+            Get-StoragePool -CimSession $Script:S2DSession.CimSession -ErrorAction SilentlyContinue |
+                Where-Object { $_.FriendlyName -ne 'Primordial' }
         } else {
-            Invoke-Command -Session $Script:S2DSession.PSSession -ScriptBlock { Get-ClusterS2D } -ErrorAction Stop
+            Invoke-Command -Session $Script:S2DSession.PSSession -ScriptBlock {
+                Get-StoragePool -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -ne 'Primordial' }
+            } -ErrorAction Stop
         }
 
-        if (-not $s2dCheck) {
-            throw "Storage Spaces Direct does not appear to be enabled on '$($Script:S2DSession.ClusterName)'."
+        if (-not $s2dPool) {
+            throw "No S2D storage pool found on '$($Script:S2DSession.ClusterName)'. Ensure Storage Spaces Direct is enabled."
         }
     }
     catch {
@@ -155,12 +159,17 @@ function Connect-S2DCluster {
         throw "Failed to validate S2D on '$ClusterName': $_"
     }
 
-    # Discover cluster nodes
+    # Discover cluster nodes via remoting — avoids requiring local FailoverClusters RSAT module
     try {
         $Script:S2DSession.Nodes = if ($Script:S2DSession.IsLocal) {
             (Get-ClusterNode -ErrorAction SilentlyContinue).Name
         } elseif ($Script:S2DSession.CimSession) {
-            (Get-ClusterNode -CimSession $Script:S2DSession.CimSession -ErrorAction SilentlyContinue).Name
+            Invoke-CimMethod -CimSession $Script:S2DSession.CimSession `
+                -Namespace 'root/MSCluster' -ClassName 'MSCluster_Node' `
+                -MethodName 'EnumerateNode' -ErrorAction SilentlyContinue | Out-Null
+            (Get-CimInstance -CimSession $Script:S2DSession.CimSession `
+                -Namespace 'root/MSCluster' -ClassName 'MSCluster_Node' `
+                -ErrorAction SilentlyContinue).Name
         } else {
             Invoke-Command -Session $Script:S2DSession.PSSession -ScriptBlock { (Get-ClusterNode).Name }
         }
