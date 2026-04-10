@@ -9,18 +9,20 @@ S2DCartographer collects data from your cluster using standard PowerShell storag
 Queries each cluster node for all physical disks including:
 
 - Media type (NVMe, SSD, HDD), bus type, model, firmware version
+- Disk number and physical location enrichment from `Get-Disk`
 - Per-disk capacity as both TiB and TB
 - Usage classification (Auto-Select, Journal, Retired)
 - Role classification (Cache or Capacity tier)
 - Health and operational status
-- Reliability counters: temperature, NVMe wear %, power-on hours, read/write errors
-- Symmetry check across nodes (warns if node disk counts differ)
+- Reliability counters: temperature, NVMe wear %, power-on hours, read/write errors, read/write latency when available
+- Anomaly detection for disk symmetry, mixed capacity sizes, firmware inconsistencies, and non-healthy disks
 
 **CIM sources used:**
 
 ```powershell
 Get-PhysicalDisk
 Get-PhysicalDisk | Get-StorageReliabilityCounter
+Get-Disk
 ```
 
 ---
