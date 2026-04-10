@@ -3,33 +3,25 @@
     ModuleVersion        = '0.1.0'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
-    Author               = 'Kristopher Turner'
-    CompanyName          = 'Hybrid Cloud Solutions, LLC'
-    Copyright            = '(c) 2026 Kristopher Turner. All rights reserved.'
+    Author               = 'Azure Local Cloud'
+    CompanyName          = 'countrycloudboy'
+    Copyright            = '(c) 2026 Hybrid Cloud Solutions. All rights reserved.'
     Description          = 'Storage Spaces Direct analysis, visualization, and reporting for Azure Local and Windows Server clusters. Inventories physical disks, storage pools, and volumes; computes capacity waterfalls with TiB/TB dual display; generates HTML dashboards, Word documents, PDFs, and Excel workbooks with publication-quality diagrams.'
     PowerShellVersion    = '7.0'
 
-    FunctionsToExport = @(
+    FunctionsToExport    = @(
         'Connect-S2DCluster',
         'Disconnect-S2DCluster',
-        'Invoke-S2DCartographer',
         'Get-S2DPhysicalDiskInventory',
-        'Get-S2DStoragePoolInfo',
-        'Get-S2DVolumeMap',
-        'Get-S2DCacheTierInfo',
-        'Get-S2DHealthStatus',
-        'Get-S2DCapacityWaterfall',
-        'New-S2DReport',
-        'New-S2DDiagram',
         'ConvertTo-S2DCapacity'
     )
-    CmdletsToExport   = @()
-    VariablesToExport = @()
-    AliasesToExport   = @()
+    CmdletsToExport      = @()
+    VariablesToExport    = @()
+    AliasesToExport      = @()
 
-    PrivateData = @{
+    PrivateData          = @{
         PSData = @{
-            Tags = @(
+            Tags         = @(
                 'S2D',
                 'StorageSpacesDirect',
                 'AzureLocal',
@@ -43,13 +35,16 @@
                 'CapacityPlanning',
                 'PowerShell'
             )
-            ProjectUri   = 'https://github.com/AzureLocal/azurelocal-S2DCartographer'
+            ProjectUri   = 'https://azurelocal.cloud/azurelocal-s2dcartographer/'
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-S2DCartographer/blob/main/LICENSE'
+            IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-S2DCartographer/main/docs/assets/images/s2dcartographer-icon.svg'
+            Prerelease   = 'preview1'
             ReleaseNotes = @'
-## v0.1.0 — Initial scaffold
+## v0.1.0-preview1 — Foundation preview
 
-Phase 1 foundation: module structure, S2DCapacity class, ConvertTo-S2DCapacity,
-Connect-S2DCluster, Disconnect-S2DCluster, and Get-S2DPhysicalDiskInventory.
+Preview release focused on the implemented Phase 1 foundation surface:
+S2DCapacity class, ConvertTo-S2DCapacity, Connect-S2DCluster,
+Disconnect-S2DCluster, and Get-S2DPhysicalDiskInventory.
 '@
         }
     }

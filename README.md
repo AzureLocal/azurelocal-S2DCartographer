@@ -49,11 +49,14 @@ Set-Location .\azurelocal-S2DCartographer
 Import-Module .\S2DCartographer.psd1 -Force
 ```
 
-### From PSGallery (planned)
+### From PSGallery (preview)
 
 ```powershell
-Install-Module S2DCartographer
+Install-Module S2DCartographer -RequiredVersion 0.1.0-preview1 -AllowPrerelease
 ```
+
+The preview package intentionally exposes only the implemented Phase 1 commands:
+`Connect-S2DCluster`, `Disconnect-S2DCluster`, `Get-S2DPhysicalDiskInventory`, and `ConvertTo-S2DCapacity`.
 
 ---
 
@@ -83,15 +86,9 @@ Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred `
 | `Connect-S2DCluster` | Establish authenticated session to a cluster |
 | `Disconnect-S2DCluster` | Clean up the active session |
 | `Get-S2DPhysicalDiskInventory` | Inventory all physical disks with health and wear data |
-| `Get-S2DStoragePoolInfo` | Storage pool configuration, allocation, and overcommit status |
-| `Get-S2DVolumeMap` | All volumes with resiliency, footprint, and provisioning detail |
-| `Get-S2DCacheTierInfo` | Cache tier configuration and binding analysis |
-| `Get-S2DHealthStatus` | Run all health checks with pass/fail results |
-| `Get-S2DCapacityWaterfall` | 8-stage capacity math from raw to usable |
-| `New-S2DReport` | Generate HTML, Word, PDF, or Excel report |
-| `New-S2DDiagram` | Generate SVG capacity waterfall and disk map diagrams |
-| `Invoke-S2DCartographer` | Full orchestrated run: collect, analyze, report |
 | `ConvertTo-S2DCapacity` | Convert bytes/TB/TiB to dual-unit capacity object |
+
+The remaining collectors, reporting, diagramming, and orchestration commands remain in development and are planned for later milestones.
 
 ---
 
