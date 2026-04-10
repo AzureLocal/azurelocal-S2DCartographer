@@ -42,7 +42,7 @@ function ConvertTo-S2DCapacity {
         S2DCapacity
     #>
     [CmdletBinding(DefaultParameterSetName = 'Bytes')]
-    [OutputType([S2DCapacity])]
+    [OutputType('S2DCapacity')]
     param(
         [Parameter(ParameterSetName = 'Bytes', Mandatory, ValueFromPipeline, Position = 0)]
         [int64] $Bytes,
