@@ -24,6 +24,11 @@ function Connect-S2DCluster {
     .PARAMETER Credential
         PSCredential to authenticate with. Prompted interactively if not supplied.
 
+    .PARAMETER Authentication
+        Authentication method passed to New-CimSession. Defaults to 'Negotiate', which
+        auto-selects NTLM or Kerberos and works in both domain-joined and workgroup/lab
+        environments. Use 'Kerberos' to enforce Kerberos explicitly.
+
     .PARAMETER CimSession
         An existing CimSession to use instead of creating a new one.
 
@@ -43,6 +48,10 @@ function Connect-S2DCluster {
         Connect-S2DCluster -ClusterName "c01-prd-bal" -Credential (Get-Credential)
 
     .EXAMPLE
+        # Non-domain or cross-domain client — use Negotiate to avoid Kerberos failure
+        Connect-S2DCluster -ClusterName "c01-prd-bal" -Credential (Get-Credential) -Authentication Negotiate
+
+    .EXAMPLE
         $cim = New-CimSession -ComputerName "node01" -Credential $cred
         Connect-S2DCluster -CimSession $cim
 
@@ -60,6 +69,10 @@ function Connect-S2DCluster {
 
         [Parameter(ParameterSetName = 'ByName')]
         [PSCredential] $Credential,
+
+        [Parameter(ParameterSetName = 'ByName')]
+        [ValidateSet('Default','Digest','Negotiate','Basic','Kerberos','ClientCertificate','CredSsp')]
+        [string] $Authentication = 'Negotiate',
 
         [Parameter(ParameterSetName = 'ByCimSession', Mandatory)]
         [CimSession] $CimSession,
@@ -86,8 +99,12 @@ function Connect-S2DCluster {
     switch ($PSCmdlet.ParameterSetName) {
 
         'ByName' {
-            Write-Verbose "Connecting to cluster '$ClusterName' via CIM/WinRM..."
-            $cimParams = @{ ComputerName = $ClusterName; ErrorAction = 'Stop' }
+            Write-Verbose "Connecting to cluster '$ClusterName' via CIM/WinRM (Authentication: $Authentication)..."
+            $cimParams = @{
+                ComputerName   = $ClusterName
+                Authentication = $Authentication
+                ErrorAction    = 'Stop'
+            }
             if ($Credential) { $cimParams['Credential'] = $Credential }
             $session = New-CimSession @cimParams
             $Script:S2DSession.CimSession    = $session
