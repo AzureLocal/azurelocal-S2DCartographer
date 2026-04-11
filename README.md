@@ -2,10 +2,13 @@
   <img src="docs/assets/images/s2dcartographer-banner.svg" alt="S2D Cartographer" width="640"/>
 </p>
 
+[![Azure Local](https://img.shields.io/badge/Azure%20Local-azurelocal.cloud-0078D4?logo=microsoft-azure)](https://azurelocal.cloud)
 [![PSGallery](https://img.shields.io/powershellgallery/v/S2DCartographer?label=PSGallery&color=3b82f6)](https://www.powershellgallery.com/packages/S2DCartographer)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![PowerShell: 7.2+](https://img.shields.io/badge/PowerShell-7.2%2B-3b82f6)](https://github.com/PowerShell/PowerShell)
 [![CI](https://github.com/AzureLocal/azurelocal-S2DCartographer/actions/workflows/ci.yml/badge.svg)](https://github.com/AzureLocal/azurelocal-S2DCartographer/actions/workflows/ci.yml)
+
+Documentation: [azurelocal.cloud](https://azurelocal.cloud) | Solutions: [Azure Local Solutions](https://azurelocal.cloud)
 
 > *Map your storage. Know your capacity.*
 
