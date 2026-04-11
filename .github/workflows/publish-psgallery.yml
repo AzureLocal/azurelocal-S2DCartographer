@@ -45,8 +45,13 @@ jobs:
           if (-not $env:PSGALLERY_API_KEY) {
             throw 'PSGALLERY_API_KEY secret is not set. Cannot publish.'
           }
+          # Stage only module files — exclude tests, docs, samples, .github
           $stagingDir = Join-Path $env:RUNNER_TEMP 'staging' 'S2DCartographer'
-          Copy-Item -Path $env:GITHUB_WORKSPACE -Destination $stagingDir -Recurse -Force
+          New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
+          foreach ($item in @('S2DCartographer.psd1','S2DCartographer.psm1','Modules','LICENSE','README.md')) {
+            $src = Join-Path $env:GITHUB_WORKSPACE $item
+            if (Test-Path $src) { Copy-Item -Path $src -Destination $stagingDir -Recurse -Force }
+          }
           Publish-Module -Path $stagingDir -NuGetApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
 
       - name: Dry-run summary

@@ -4,19 +4,45 @@ All notable changes to S2DCartographer will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Pre-release versions start at `0.1.0`. The first stable PSGallery release will be `1.0.0` once Phase 5 is complete.
-
 ## [Unreleased]
+
+## [1.0.0] — 2026-04-11
 
 ### Added
 
-- Initial repository scaffold with module manifest, root loader, folder structure, and GitHub Actions CI/CD pipeline.
-- `S2DCapacity` class — dual-unit capacity representation with `Bytes`, `TiB`, `TB`, `GiB`, `GB`, and `Display` properties.
-- `ConvertTo-S2DCapacity` — converts bytes, TB, or TiB input to a full `S2DCapacity` object with both binary and decimal units.
-- `Connect-S2DCluster` — establishes an authenticated CIM/WinRM session to a Failover Cluster with S2D enabled. Supports direct credential, existing `CimSession`, `PSSession`, local execution, and Key Vault credential retrieval.
-- `Disconnect-S2DCluster` — tears down the active module session and releases CIM/PS sessions.
-- `Get-S2DPhysicalDiskInventory` — inventories all physical disks per node, classifying cache vs capacity role, collecting wear and reliability counters, and detecting symmetry anomalies.
-- Pester 5 unit tests: `ConvertTo-S2DCapacity.Tests.ps1`, `Get-S2DReserveCalculation.Tests.ps1`, `Get-S2DResiliencyEfficiency.Tests.ps1`.
-- Mock cluster data files for offline/simulation testing: 2-node all-NVMe, 3-node mixed-tier, 4-node three-way mirror, 16-node enterprise.
-- MkDocs Material documentation site scaffolding with sections for getting started, collectors, reports, diagrams, TiB vs TB, and capacity math.
-- `release-please` configuration for automated changelog and tag management.
+- `Get-S2DStoragePoolInfo` — pool capacity, health, resiliency settings, storage tiers, overcommit ratio.
+- `Get-S2DVolumeMap` — per-volume resiliency type, pool footprint, efficiency %, provisioning type, infrastructure volume detection.
+- `Get-S2DCacheTierInfo` — cache mode, all-flash/all-NVMe detection, software write-back cache identification.
+- `Get-S2DHealthStatus` — 10 health checks (ReserveAdequacy, DiskSymmetry, VolumeHealth, DiskHealth, NVMeWear, ThinOvercommit, FirmwareConsistency, RebuildCapacity, InfrastructureVolume, CacheTierHealth) with pass/warn/fail and remediation guidance.
+- `Get-S2DCapacityWaterfall` — 8-stage capacity accounting pipeline from raw physical to final usable VM space.
+- `Invoke-S2DCartographer` — one-command orchestrator: connect → collect → report → disconnect. Supports all report formats, diagram types, Key Vault credentials, and `-PassThru`.
+- `New-S2DReport` — HTML (Chart.js dashboard), Word (.docx, no Office required), PDF (headless Edge/Chrome), and Excel (.xlsx via ImportExcel).
+- `New-S2DDiagram` — 6 SVG diagram types: Waterfall, DiskNodeMap, PoolLayout, Resiliency, HealthCard, TiBTBReference.
+- 119 Pester 5 unit tests across all collectors, capacity math, and health checks.
+- Complete MkDocs documentation site: getting-started, collectors, reports, diagrams, capacity-math, tib-vs-tb.
+- Sample output files: `samples/sample-waterfall.svg`, `samples/sample-html-report.html`.
+
+### Changed
+
+- Minimum PowerShell version raised to 7.2 (was 7.0).
+- `ProjectUri` updated to point to the GitHub repository.
+
+## [0.1.0-preview2] — 2026-03-28
+
+### Fixed
+
+- `Connect-S2DCluster` failing on non-domain-joined management machines. S2D validation now uses `Get-StoragePool` via CIM instead of `Get-ClusterS2D`.
+- Cluster node discovery switched to `MSCluster_Node` CIM class via remote session instead of `Get-ClusterNode` (which required local RSAT).
+
+## [0.1.0-preview1] — 2026-03-15
+
+### Features
+
+- Initial repository scaffold, module manifest, folder structure, GitHub Actions CI/CD.
+- `S2DCapacity` class — dual-unit capacity with `Bytes`, `TiB`, `TB`, `GiB`, `GB`, `Display`.
+- `ConvertTo-S2DCapacity` — converts bytes, TB, or TiB to `S2DCapacity`.
+- `Connect-S2DCluster`, `Disconnect-S2DCluster`.
+- `Get-S2DPhysicalDiskInventory`.
+- Pester 5 unit tests for capacity math and reserve calculation.
+- MkDocs Material documentation site scaffolding.
+- `release-please` configuration.
