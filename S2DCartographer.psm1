@@ -21,14 +21,16 @@ foreach ($folder in $moduleFolders) {
 
 # Module-scoped session state — shared by all cmdlets
 $Script:S2DSession = @{
-    ClusterName   = $null
-    ClusterFqdn   = $null
-    Nodes         = @()
-    CimSession    = $null
-    PSSession     = $null
-    IsConnected   = $false
-    IsLocal       = $false
-    CollectedData = @{}
+    ClusterName    = $null
+    ClusterFqdn    = $null
+    Nodes          = @()
+    CimSession     = $null
+    PSSession      = $null
+    IsConnected    = $false
+    IsLocal        = $false
+    Authentication = 'Negotiate'
+    Credential     = $null
+    CollectedData  = @{}
 }
 
 Export-ModuleMember -Function @(

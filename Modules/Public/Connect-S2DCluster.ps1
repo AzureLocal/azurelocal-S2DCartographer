@@ -107,8 +107,10 @@ function Connect-S2DCluster {
             }
             if ($Credential) { $cimParams['Credential'] = $Credential }
             $session = New-CimSession @cimParams
-            $Script:S2DSession.CimSession    = $session
-            $Script:S2DSession.ClusterName   = $ClusterName
+            $Script:S2DSession.CimSession     = $session
+            $Script:S2DSession.ClusterName    = $ClusterName
+            $Script:S2DSession.Authentication = $Authentication
+            $Script:S2DSession.Credential     = $Credential
         }
 
         'ByCimSession' {
@@ -141,9 +143,11 @@ function Connect-S2DCluster {
                 throw "Key Vault secret '$SecretName' does not have a username in ContentType. Set ContentType to 'domain\\username'."
             }
             $kvCred = [PSCredential]::new($username, (ConvertTo-SecureString $secret -AsPlainText -Force))
-            $session = New-CimSession -ComputerName $ClusterName -Credential $kvCred -ErrorAction Stop
-            $Script:S2DSession.CimSession    = $session
-            $Script:S2DSession.ClusterName   = $ClusterName
+            $session = New-CimSession -ComputerName $ClusterName -Credential $kvCred -Authentication Negotiate -ErrorAction Stop
+            $Script:S2DSession.CimSession     = $session
+            $Script:S2DSession.ClusterName    = $ClusterName
+            $Script:S2DSession.Authentication = 'Negotiate'
+            $Script:S2DSession.Credential     = $kvCred
         }
     }
 
@@ -169,9 +173,11 @@ function Connect-S2DCluster {
         # Clean up partially-created sessions on failure
         if ($Script:S2DSession.CimSession) { $Script:S2DSession.CimSession | Remove-CimSession -ErrorAction SilentlyContinue }
         $Script:S2DSession = @{
-            ClusterName   = $null; ClusterFqdn = $null; Nodes = @()
-            CimSession    = $null; PSSession   = $null
-            IsConnected   = $false; IsLocal     = $false; CollectedData = @{}
+            ClusterName    = $null; ClusterFqdn = $null; Nodes = @()
+            CimSession     = $null; PSSession   = $null
+            IsConnected    = $false; IsLocal     = $false
+            Authentication = 'Negotiate'; Credential = $null
+            CollectedData  = @{}
         }
         throw "Failed to validate S2D on '$ClusterName': $_"
     }

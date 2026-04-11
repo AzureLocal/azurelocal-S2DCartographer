@@ -22,6 +22,10 @@ function Invoke-S2DCartographer {
     .PARAMETER Credential
         PSCredential for cluster authentication. Resolved from Key Vault when -KeyVaultName is provided.
 
+    .PARAMETER Authentication
+        Authentication method passed through to Connect-S2DCluster / New-CimSession.
+        Defaults to 'Negotiate', which works in both domain-joined and workgroup/lab environments.
+
     .PARAMETER CimSession
         Existing CimSession to the cluster. Skips Connect-S2DCluster.
 
@@ -86,6 +90,10 @@ function Invoke-S2DCartographer {
         [switch] $Local,
 
         [Parameter()]
+        [ValidateSet('Default','Digest','Negotiate','Basic','Kerberos','ClientCertificate','CredSsp')]
+        [string] $Authentication = 'Negotiate',
+
+        [Parameter()]
         [string] $KeyVaultName,
 
         [Parameter()]
@@ -128,12 +136,13 @@ function Invoke-S2DCartographer {
         # ── Step 1: Connect ───────────────────────────────────────────────────
         if (-not $Script:S2DSession.IsConnected) {
             $connectParams = @{}
-            if ($ClusterName)   { $connectParams['ClusterName'] = $ClusterName }
-            if ($Credential)    { $connectParams['Credential']  = $Credential }
-            if ($CimSession)    { $connectParams['CimSession']  = $CimSession }
-            if ($Local)         { $connectParams['Local']       = $Local }
-            if ($KeyVaultName)  { $connectParams['KeyVaultName'] = $KeyVaultName }
-            if ($SecretName)    { $connectParams['SecretName']   = $SecretName }
+            if ($ClusterName)    { $connectParams['ClusterName']    = $ClusterName }
+            if ($Credential)     { $connectParams['Credential']     = $Credential }
+            if ($ClusterName)    { $connectParams['Authentication'] = $Authentication }
+            if ($CimSession)     { $connectParams['CimSession']     = $CimSession }
+            if ($Local)          { $connectParams['Local']          = $Local }
+            if ($KeyVaultName)   { $connectParams['KeyVaultName']   = $KeyVaultName }
+            if ($SecretName)     { $connectParams['SecretName']     = $SecretName }
 
             if ($PSCmdlet.ShouldProcess($ClusterName, 'Connect to S2D cluster')) {
                 Connect-S2DCluster @connectParams

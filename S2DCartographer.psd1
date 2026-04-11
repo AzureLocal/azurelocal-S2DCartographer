@@ -1,6 +1,6 @@
 @{
     RootModule           = 'S2DCartographer.psm1'
-    ModuleVersion        = '1.0.1'
+    ModuleVersion        = '1.0.2'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
     Author               = 'Azure Local Cloud'
@@ -47,6 +47,19 @@
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-S2DCartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-S2DCartographer/main/docs/assets/images/s2dcartographer-icon.svg'
             ReleaseNotes = @'
+## v1.0.2 — Fix WinRM authentication for non-domain and cross-domain environments
+
+### Fixed in 1.0.2
+- Per-node CIM sessions in `Get-S2DPhysicalDiskInventory` now inherit Authentication
+  method and Credential from the module session, fixing WinRM Kerberos failures when
+  the client is not domain-joined or is in a different domain (#31)
+- `Connect-S2DCluster -KeyVaultName` path now uses `-Authentication Negotiate` instead
+  of relying on the Kerberos default
+- `Invoke-S2DCartographer` now accepts and passes through `-Authentication` to
+  `Connect-S2DCluster`
+- Session state (`$Script:S2DSession`) now stores Authentication and Credential for
+  reuse by downstream collectors
+
 ## v1.0.0 — First stable release
 
 Full pipeline from cluster connection to publication-quality reports and diagrams.

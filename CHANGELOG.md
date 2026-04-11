@@ -8,6 +8,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.0.2] — 2026-04-11
+
+### Fixed
+
+- `Get-S2DPhysicalDiskInventory`: per-node CIM sessions now inherit Authentication method and Credential from the module session, fixing WinRM Kerberos failures on non-domain-joined or cross-domain clients — completes [#31](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/31).
+- `Connect-S2DCluster`: `ByKeyVault` parameter set now passes `-Authentication Negotiate` to `New-CimSession` instead of relying on the Kerberos default.
+- `Invoke-S2DCartographer`: add `-Authentication` parameter that passes through to `Connect-S2DCluster`.
+- Module session state (`$Script:S2DSession`) now stores `Authentication` and `Credential` so downstream collectors can create per-node CIM sessions with the same auth settings.
+
 ## [1.0.1] — 2026-04-11
 
 ### Fixed

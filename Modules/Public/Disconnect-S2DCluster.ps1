@@ -48,14 +48,16 @@ function Disconnect-S2DCluster {
     }
 
     $Script:S2DSession = @{
-        ClusterName   = $null
-        ClusterFqdn   = $null
-        Nodes         = @()
-        CimSession    = $null
-        PSSession     = $null
-        IsConnected   = $false
-        IsLocal       = $false
-        CollectedData = @{}
+        ClusterName    = $null
+        ClusterFqdn    = $null
+        Nodes          = @()
+        CimSession     = $null
+        PSSession      = $null
+        IsConnected    = $false
+        IsLocal        = $false
+        Authentication = 'Negotiate'
+        Credential     = $null
+        CollectedData  = @{}
     }
 
     Write-Verbose "Disconnected from '$clusterName'."

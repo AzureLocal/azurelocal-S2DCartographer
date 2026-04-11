@@ -334,7 +334,15 @@ function Get-S2DPhysicalDiskInventory {
         foreach ($node in $nodes) {
             Write-Verbose "  Collecting physical disks from node '$node'..."
             try {
-                $nodeCim = New-CimSession -ComputerName $node -ErrorAction Stop
+                $nodeCimParams = @{
+                    ComputerName   = $node
+                    Authentication = ($Script:S2DSession.Authentication ?? 'Negotiate')
+                    ErrorAction    = 'Stop'
+                }
+                if ($Script:S2DSession.Credential) {
+                    $nodeCimParams['Credential'] = $Script:S2DSession.Credential
+                }
+                $nodeCim = New-CimSession @nodeCimParams
                 $disks = & $getDisksBlock $nodeCim $node
                 $allDisks += $disks
                 $nodeCim | Remove-CimSession
