@@ -63,6 +63,35 @@ Use the GitHub issue templates for bug reports and feature requests. When report
 
 ---
 
+## Working Independently
+
+This repository can be used as a standalone project without the parent multi-root workspace.
+
+### Open Only This Repository
+
+1. Open VS Code
+2. File > Open Workspace from File > select `azurelocal-S2DCartographer.code-workspace`
+3. All recommended extensions will be prompted for installation
+
+### Prerequisites
+
+- Python 3.x and pip (for MkDocs documentation)
+- [MkDocs Material](https://squidfunk.github.io/mkdocs-material/): `pip install mkdocs-material`
+
+### Run Documentation Locally
+
+```bash
+mkdocs serve
+```
+
+Browse to <http://127.0.0.1:8000>
+
+### Build Documentation
+
+```bash
+mkdocs build
+```
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
