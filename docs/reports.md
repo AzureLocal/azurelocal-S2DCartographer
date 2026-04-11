@@ -5,7 +5,7 @@ S2DCartographer generates publication-quality reports from collected cluster dat
 ## Formats
 
 | Format | Extension | Use case |
-| -------- | ----------- | ---------- |
+| --- | --- | --- |
 | **HTML** | `.html` | Interactive browser dashboard; self-contained, no dependencies |
 | **Word** | `.docx` | Customer deliverables, architecture review documents |
 | **PDF** | `.pdf` | Archivable, printable, universally readable |
@@ -61,7 +61,11 @@ New-S2DReport -InputObject $data -Format Word `
     -OutputDirectory "C:\Deliverables\"
 ```
 
-**No Office required:** The Word document is built from scratch using Open XML — compatible with Word 2016+, LibreOffice, and Google Docs.
+!!! note "No Office required"
+    The Word document is built from scratch using Open XML — compatible with Word 2016+, LibreOffice, and Google Docs. Microsoft Office does not need to be installed on the machine running S2DCartographer.
+
+!!! warning "Garbled XML on open"
+    If the generated `.docx` opens with a repair prompt or shows garbled XML, this is usually caused by special characters (em-dashes, Unicode symbols) in cluster or volume names. Please [open an issue](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/new?template=bug_report.yml) with the cluster name and affected volume names.
 
 ---
 
@@ -75,26 +79,33 @@ Generates HTML first, then uses headless Edge or Chrome to print it to PDF.
 2. `chrome.exe` in standard Chrome install paths
 3. `msedge` / `chrome` / `chromium-browser` on `$env:PATH`
 
-If no browser is found, `Export-S2DPdfReport` writes a warning with manual instructions and returns `$null`.
-
 **Generate:**
 
 ```powershell
 New-S2DReport -InputObject $data -Format Pdf -OutputDirectory "C:\Reports\"
 ```
 
-**Tip:** For scheduled/unattended runs, ensure Edge is installed on the machine running S2DCartographer. Edge ships with Windows 11 and Windows Server 2022+ by default.
+!!! note "Browser requirement"
+    PDF generation requires Microsoft Edge or Google Chrome. Edge ships pre-installed on Windows 11, Windows Server 2022+, and Azure Local nodes. If no browser is found, the command warns and returns `$null`.
+
+!!! tip "Manual PDF from HTML"
+    If no browser is available, generate the HTML report first, then open it in a browser to print manually (Edge/Chrome → Print → Save as PDF).
+
+```powershell
+New-S2DReport -InputObject $data -Format Html -OutputDirectory "C:\Reports\"
+# Open the .html file in Edge/Chrome → Print → Save as PDF
+```
 
 ---
 
 ## Excel Workbook
 
-Multi-tab `.xlsx` using the [ImportExcel](https://github.com/dfinke/ImportExcel) module. Install once with `Install-Module ImportExcel`.
+Multi-tab `.xlsx` using the [ImportExcel](https://github.com/dfinke/ImportExcel) module.
 
 **Tabs:**
 
 | Tab | Content |
-| ----- | --------- |
+| --- | --- |
 | **Summary** | Cluster name, node count, health status, collection date, key capacity metrics |
 | **Capacity Waterfall** | All 8 stages with TiB and TB columns |
 | **Physical Disks** | Full disk inventory — node, model, media type, role, capacity, wear %, firmware |
@@ -109,6 +120,13 @@ Multi-tab `.xlsx` using the [ImportExcel](https://github.com/dfinke/ImportExcel)
 New-S2DReport -InputObject $data -Format Excel -OutputDirectory "C:\Reports\"
 ```
 
+!!! warning "ImportExcel required"
+    Excel output requires the `ImportExcel` module, which is not installed by default. HTML, Word, and PDF have no additional dependencies.
+
+```powershell
+Install-Module ImportExcel -Scope CurrentUser -Force
+```
+
 ---
 
 ## Using `New-S2DReport` directly
@@ -118,7 +136,7 @@ New-S2DReport -InputObject $data -Format Excel -OutputDirectory "C:\Reports\"
 **Parameters:**
 
 | Parameter | Type | Required | Description |
-| ----------- | ------ | ---------- | ------------- |
+| --- | --- | --- | --- |
 | `-InputObject` | `S2DClusterData` | Yes | Cluster data object (also accepts pipeline) |
 | `-Format` | `string[]` | Yes | Html, Word, Pdf, Excel, or All |
 | `-OutputDirectory` | `string` | No | Destination folder (default: `C:\S2DCartographer`) |
@@ -134,7 +152,7 @@ New-S2DReport -InputObject $data -Format Excel -OutputDirectory "C:\Reports\"
 The orchestrator handles connect → collect → report → disconnect in one call:
 
 ```powershell
-# HTML only (default)
+# HTML only
 Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential (Get-Credential)
 
 # All formats + all diagrams

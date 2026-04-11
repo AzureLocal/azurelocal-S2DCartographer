@@ -81,12 +81,23 @@ copyright: >-
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
-  - Concepts:
-    - TiB vs TB: tib-vs-tb.md
-    - Capacity Math: capacity-math.md
+  - Connecting: connecting.md
   - Collectors:
     - Overview: collectors.md
+    - Physical Disks: collectors/physical-disks.md
+    - Storage Pool: collectors/storage-pool.md
+    - Volume Map: collectors/volume-map.md
+    - Cache Tier: collectors/cache-tier.md
+    - Capacity Waterfall: collectors/capacity-waterfall.md
+    - Health Checks: collectors/health-checks.md
   - Outputs:
     - Reports: reports.md
     - Diagrams: diagrams.md
-  - Changelog: changelog.md
+  - Concepts:
+    - TiB vs TB: tib-vs-tb.md
+    - Capacity Math: capacity-math.md
+    - Architecture: concepts/architecture.md
+  - Project:
+    - Roadmap: project/roadmap.md
+    - Troubleshooting: project/troubleshooting.md
+    - Changelog: changelog.md

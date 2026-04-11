@@ -2,8 +2,10 @@
   <img src="docs/assets/images/s2dcartographer-banner.svg" alt="S2D Cartographer" width="640"/>
 </p>
 
+[![PSGallery](https://img.shields.io/powershellgallery/v/S2DCartographer?label=PSGallery&color=3b82f6)](https://www.powershellgallery.com/packages/S2DCartographer)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![PowerShell: 7.x](https://img.shields.io/badge/PowerShell-7.x-3b82f6)](https://github.com/PowerShell/PowerShell)
+[![PowerShell: 7.2+](https://img.shields.io/badge/PowerShell-7.2%2B-3b82f6)](https://github.com/PowerShell/PowerShell)
+[![CI](https://github.com/AzureLocal/azurelocal-S2DCartographer/actions/workflows/ci.yml/badge.svg)](https://github.com/AzureLocal/azurelocal-S2DCartographer/actions/workflows/ci.yml)
 
 > *Map your storage. Know your capacity.*
 
@@ -26,55 +28,47 @@ Storage Spaces Direct is one of the most misunderstood technologies in the Azure
 ## What It Does
 
 | Capability | Description |
-|------------|-------------|
+| --- | --- |
 | **Physical Disk Inventory** | All disks per node: media type, size, firmware, wear, role (cache vs capacity) |
 | **Storage Pool Analysis** | Pool health, allocation, reserve adequacy, thin overcommit detection |
 | **Volume Map** | All volumes with resiliency type, footprint, provisioning type, efficiency |
-| **Cache Tier Analysis** | Cache configuration, binding ratio, degradation detection |
-| **Health Checks** | 10+ pass/fail checks with remediation guidance |
-| **Capacity Waterfall** | 8-stage math from raw physical to final usable capacity |
-| **Reports** | HTML, Word, PDF, and Excel formats suitable for customer deliverables |
-| **Diagrams** | Capacity waterfall, disk-to-node map, pool layout, resiliency diagrams |
-| **TiB/TB everywhere** | Dual-unit display on every value in every output |
+| **Cache Tier Analysis** | Cache configuration, binding ratio, all-flash software cache detection |
+| **Health Checks** | 10 pass/fail checks with severity and remediation guidance |
+| **Capacity Waterfall** | 8-stage pipeline from raw physical to final usable VM capacity |
+| **Reports** | HTML, Word, PDF, and Excel — ready for customer deliverables |
+| **Diagrams** | SVG waterfall, disk-node map, pool layout, resiliency, health card |
+| **TiB/TB everywhere** | Dual-unit display on every capacity value in every output |
+
+---
+
+## Sample Output
+
+![S2D Capacity Waterfall](samples/sample-waterfall.svg)
 
 ---
 
 ## Installation
 
-### From source (current)
-
 ```powershell
-git clone https://github.com/AzureLocal/azurelocal-S2DCartographer.git
-Set-Location .\azurelocal-S2DCartographer
-Import-Module .\S2DCartographer.psd1 -Force
+Install-Module S2DCartographer -Scope CurrentUser
 ```
 
-### From PSGallery (preview)
-
-```powershell
-Install-Module S2DCartographer -RequiredVersion 0.1.0-preview1 -AllowPrerelease
-```
-
-The preview package intentionally exposes only the implemented Phase 1 commands:
-`Connect-S2DCluster`, `Disconnect-S2DCluster`, `Get-S2DPhysicalDiskInventory`, and `ConvertTo-S2DCapacity`.
+**Requirements:** PowerShell 7.2+, Windows (RSAT not required on cluster nodes).
 
 ---
 
 ## Quick Start
 
 ```powershell
-# Connect to your cluster
-Connect-S2DCluster -ClusterName "c01-prd-bal" -Credential (Get-Credential)
-
-# Run a quick health check
-Get-S2DHealthStatus | Format-Table CheckName, Severity, Status, Details
-
-# Get the full capacity waterfall
-Get-S2DCapacityWaterfall | Format-List
-
-# Generate a full HTML report
-Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred `
+# One command — connect, collect, report, disconnect
+Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential (Get-Credential) `
     -Format Html -OutputDirectory "C:\Reports\"
+
+# Or use individual collectors
+Connect-S2DCluster -ClusterName "c01-prd-bal" -Credential (Get-Credential)
+Get-S2DHealthStatus          | Format-Table CheckName, Severity, Status
+Get-S2DCapacityWaterfall     | Select-Object -ExpandProperty Stages | Format-Table Stage, Name, Size
+Disconnect-S2DCluster
 ```
 
 ---
@@ -82,28 +76,34 @@ Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred `
 ## Commands
 
 | Command | Purpose |
-|---------|---------|
-| `Connect-S2DCluster` | Establish authenticated session to a cluster |
-| `Disconnect-S2DCluster` | Clean up the active session |
-| `Get-S2DPhysicalDiskInventory` | Inventory all physical disks with health and wear data |
-| `ConvertTo-S2DCapacity` | Convert bytes/TB/TiB to dual-unit capacity object |
-
-The remaining collectors, reporting, diagramming, and orchestration commands remain in development and are planned for later milestones.
+| --- | --- |
+| `Connect-S2DCluster` | Establish authenticated session — domain, non-domain, local, or Key Vault |
+| `Disconnect-S2DCluster` | Close sessions and clear the module cache |
+| `Get-S2DPhysicalDiskInventory` | Per-node disk inventory with health, wear, and reliability counters |
+| `Get-S2DStoragePoolInfo` | Pool capacity, resiliency settings, overcommit ratio |
+| `Get-S2DVolumeMap` | Volume resiliency, footprint, efficiency, infrastructure classification |
+| `Get-S2DCacheTierInfo` | Cache mode, all-flash detection, cache disk health |
+| `Get-S2DCapacityWaterfall` | 8-stage capacity pipeline from raw to usable |
+| `Get-S2DHealthStatus` | 10 health checks with severity and remediation guidance |
+| `New-S2DReport` | Generate HTML, Word, PDF, or Excel reports |
+| `New-S2DDiagram` | Generate SVG diagrams (Waterfall, DiskNodeMap, PoolLayout, and more) |
+| `Invoke-S2DCartographer` | One-command orchestrator: connect → collect → report → disconnect |
+| `ConvertTo-S2DCapacity` | Convert bytes/TB/TiB to dual-unit `S2DCapacity` object |
 
 ---
 
-## Development Status
+## Documentation
 
-| Phase | Work | Status |
-|-------|------|--------|
-| Phase 1 | Foundation: module scaffold, connection, ConvertTo-S2DCapacity, disk inventory | 🔄 In Progress |
-| Phase 2 | Core collectors: pool, volumes, cache, waterfall, health | ⏳ Planned |
-| Phase 3 | Reporting engine: HTML, Excel, Word, PDF | ⏳ Planned |
-| Phase 4 | Diagrams: SVG waterfall, disk-node map, pool layout | ⏳ Planned |
-| Phase 5 | Orchestrator, Key Vault, MkDocs, PSGallery publish | ⏳ Planned |
+Full documentation at **[azurelocal.github.io/azurelocal-S2DCartographer](https://azurelocal.github.io/azurelocal-S2DCartographer/)**
+
+- [Getting Started](https://azurelocal.github.io/azurelocal-S2DCartographer/getting-started/)
+- [Connecting to a Cluster](https://azurelocal.github.io/azurelocal-S2DCartographer/connecting/)
+- [Collectors Reference](https://azurelocal.github.io/azurelocal-S2DCartographer/collectors/)
+- [Capacity Math](https://azurelocal.github.io/azurelocal-S2DCartographer/capacity-math/)
+- [Troubleshooting](https://azurelocal.github.io/azurelocal-S2DCartographer/project/troubleshooting/)
 
 ---
 
 ## License
 
-[MIT](LICENSE) — (c) 2026 Kristopher Turner / Hybrid Cloud Solutions, LLC
+[MIT](LICENSE) — © 2026 Kristopher Turner / Hybrid Cloud Solutions, LLC
