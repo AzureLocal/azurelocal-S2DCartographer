@@ -5,6 +5,13 @@
     ".": {
       "release-type": "simple",
       "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "S2DCartographer.psd1",
+          "search-by-line": true
+        }
+      ],
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "draft": false,

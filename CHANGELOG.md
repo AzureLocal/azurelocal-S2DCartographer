@@ -1,10 +1,18 @@
 # Changelog
 
+<!-- markdownlint-disable MD024 -->
+
 All notable changes to S2DCartographer will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.1] — 2026-04-11
+
+### Fixed
+
+- `Connect-S2DCluster`: add `-Authentication` parameter (default: `Negotiate`) to `New-CimSession`. Fixes WinRM Kerberos failure on non-domain-joined or cross-domain clients — closes [#31](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/31).
 
 ## [1.0.0] — 2026-04-11
 
