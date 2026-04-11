@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S2D Cartographer — c01-prd-bal</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--blue:#0078d4;--teal:#008272;--green:#107c10;--amber:#e8a218;--red:#d13438;--bg:#faf9f8;--card:#ffffff;--border:#edebe9;--text:#201f1e;--muted:#605e5c}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{background:var(--blue);color:white;padding:20px 32px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:22px;font-weight:600}
+header .meta{font-size:12px;opacity:.85;text-align:right}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.section{background:var(--card);border:1px solid var(--border);border-radius:6px;margin-bottom:20px;padding:20px}
+.section h2{font-size:16px;font-weight:600;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--blue);color:var(--blue)}
+.overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
+.kpi .val{font-size:22px;font-weight:700;color:var(--blue)}
+.kpi .lbl{font-size:11px;color:var(--muted);margin-top:4px}
+.health-banner{border-radius:6px;padding:12px 20px;margin-bottom:16px;font-weight:600;font-size:15px;background:#fff4ce;color:#d47a00}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f3f2f1;text-align:left;padding:8px 10px;font-weight:600;border-bottom:2px solid var(--border)}
+td{padding:7px 10px;border-bottom:1px solid var(--border)}
+tr:hover{background:#f3f2f1}
+.badge{display:inline-block;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600}
+.badge.ok{background:#dff6dd;color:#107c10}.badge.fail{background:#fde7e9;color:#d13438}.badge.info{background:#eff6fc;color:#0078d4}.badge.warn{background:#fff4ce;color:#d47a00}
+.hc-card{display:flex;align-items:flex-start;gap:12px;border-radius:6px;padding:12px 16px;margin-bottom:8px;border-left:4px solid}
+.hc-pass{background:#dff6dd;border-color:#107c10}.hc-warn{background:#fff4ce;border-color:#e8a218}.hc-fail{background:#fde7e9;border-color:#d13438}.hc-info{background:#eff6fc;border-color:#0078d4}
+.hc-icon{font-size:20px;min-width:24px}.hc-body strong{font-size:13px}.hc-body p{font-size:12px;color:var(--muted);margin-top:4px}.remediation{color:#323130 !important;font-style:italic}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px}
+.toggle-btn{background:var(--blue);color:white;border:none;border-radius:4px;padding:5px 14px;cursor:pointer;font-size:12px}
+.chart-wrap{position:relative;height:300px}
+.tib-tb-table{font-size:13px}
+.tib-tb-table th,.tib-tb-table td{padding:6px 14px}
+@media print{.toggle-row{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>S2D Cartographer Report</h1>
+    <div style="font-size:13px;opacity:.9">c01-prd-bal &nbsp;|&nbsp; 4 nodes</div>
+  </div>
+  <div class="meta">
+    Generated: 2026-04-10 14:30<br>
+    By: Kristopher Turner<br>
+    TierPoint
+  </div>
+</header>
+<div class="container">
+
+<div class="section">
+  <h2>Executive Summary</h2>
+  <div class="health-banner">Overall Health: Warning</div>
+  <div class="overview-grid">
+    <div class="kpi"><div class="val">4</div><div class="lbl">Nodes</div></div>
+    <div class="kpi"><div class="val">55.88 TiB</div><div class="lbl">Raw Capacity</div></div>
+    <div class="kpi"><div class="val">13.97 TiB</div><div class="lbl">Usable Capacity</div></div>
+    <div class="kpi"><div class="val">26.85 TiB</div><div class="lbl">Pool Free</div></div>
+    <div class="kpi"><div class="val">16</div><div class="lbl">Physical Disks</div></div>
+    <div class="kpi"><div class="val">3</div><div class="lbl">Workload Volumes</div></div>
+    <div class="kpi"><div class="val">Warning</div><div class="lbl">Reserve Status</div></div>
+    <div class="kpi"><div class="val">25.0%</div><div class="lbl">Resiliency Efficiency</div></div>
+  </div>
+  <p><strong>Pool:</strong> S2D on c01-prd-bal &nbsp; <strong>Health:</strong> Healthy &nbsp; <strong>Total:</strong> 55.31 TiB &nbsp; <strong>Allocated:</strong> 28.46 TiB &nbsp; <strong>Free:</strong> 26.85 TiB &nbsp; <strong>Overcommit:</strong> 0.16x</p>
+  <p style="margin-top:8px"><strong>Cache Mode:</strong> WriteBack <span class="badge info">All-Flash</span> &nbsp; <strong>State:</strong> Active &nbsp; <strong>Disks:</strong> 0 (software cache)</p>
+</div>
+
+<div class="section">
+  <h2>Capacity Waterfall</h2>
+  <div class="toggle-row">
+    <span>Display unit:</span>
+    <button class="toggle-btn" onclick="toggleUnit()">Toggle TiB / TB</button>
+    <span id="unitLabel" style="font-weight:600">TiB</span>
+  </div>
+  <div class="chart-wrap"><canvas id="waterfallChart"></canvas></div>
+</div>
+
+<div class="section">
+  <h2>Physical Disk Inventory</h2>
+  <table id="diskTable">
+    <thead><tr><th>Node</th><th>Model</th><th>Media</th><th>Role</th><th>Size</th><th>Wear %</th><th>Health</th></tr></thead>
+    <tbody>
+      <tr><td>c01-prd-bal-n01</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>2%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n01</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>3%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n01</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>2%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n01</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>4%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n02</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>2%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n02</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>3%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n02</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>5%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n02</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>2%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n03</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>3%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n03</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>2%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n03</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>4%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n03</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>3%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n04</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>2%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n04</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>6%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n04</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>3%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>c01-prd-bal-n04</td><td>Samsung PM9A3 3.84TB</td><td>NVMe</td><td>Capacity</td><td>3.492 TiB (3.84 TB)</td><td>2%</td><td><span class="badge ok">Healthy</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Volume Map</h2>
+  <table>
+    <thead><tr><th>Volume</th><th>Resiliency</th><th>Size</th><th>Pool Footprint</th><th>Efficiency</th><th>Provisioning</th><th>Health</th></tr></thead>
+    <tbody>
+      <tr><td>Infrastructure_3f8a1b2c4d5e <span class="badge info">Infra</span></td><td>Mirror (3 copies)</td><td>0.477 TiB</td><td>1.430 TiB</td><td>33.3%</td><td>Fixed</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>ClusterStorage_VM_01</td><td>Mirror (3 copies)</td><td>5.00 TiB</td><td>15.00 TiB</td><td>33.3%</td><td>Fixed</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>ClusterStorage_VM_02</td><td>Mirror (3 copies)</td><td>4.61 TiB</td><td>13.83 TiB</td><td>33.3%</td><td>Fixed</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>ClusterStorage_Backup</td><td>Mirror (3 copies)</td><td>4.36 TiB</td><td>13.08 TiB</td><td>33.3%</td><td>Thin</td><td><span class="badge ok">Healthy</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Health Checks</h2>
+
+  <div class="hc-card hc-warn">
+    <span class="hc-icon">⚠</span>
+    <div class="hc-body">
+      <strong>ReserveAdequacy</strong> <em>[Critical]</em>
+      <p>Reserve free space (26.85 TiB) is below the recommended minimum of 13.97 TiB. Currently at 66% of recommended.</p>
+      <p class="remediation"><strong>Remediation:</strong> Free pool space before adding more volumes. Consider removing unused thin-provisioned volumes or expanding the cluster.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">✔</span>
+    <div class="hc-body">
+      <strong>DiskSymmetry</strong> <em>[Warning]</em>
+      <p>Disk counts are symmetric across all 4 nodes (4 disks each).</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">✔</span>
+    <div class="hc-body">
+      <strong>VolumeHealth</strong> <em>[Critical]</em>
+      <p>All 4 volumes are in Healthy state.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">✔</span>
+    <div class="hc-body">
+      <strong>DiskHealth</strong> <em>[Critical]</em>
+      <p>All 16 physical disks are in Healthy state.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">✔</span>
+    <div class="hc-body">
+      <strong>NVMeWear</strong> <em>[Warning]</em>
+      <p>All 16 NVMe drives are within acceptable wear levels. Highest wear: 6% (c01-prd-bal-n04).</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">✔</span>
+    <div class="hc-body">
+      <strong>ThinOvercommit</strong> <em>[Warning]</em>
+      <p>Thin-provisioned volumes are within pool capacity. Overcommit ratio: 0.16x.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">✔</span>
+    <div class="hc-body">
+      <strong>FirmwareConsistency</strong> <em>[Info]</em>
+      <p>All 16 Samsung PM9A3 drives are on firmware GXA7402Q.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">✔</span>
+    <div class="hc-body">
+      <strong>RebuildCapacity</strong> <em>[Critical]</em>
+      <p>Pool has sufficient free space (26.85 TiB) to rebuild the largest node (13.97 TiB).</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">✔</span>
+    <div class="hc-body">
+      <strong>InfrastructureVolume</strong> <em>[Info]</em>
+      <p>Azure Local infrastructure volume detected (Infrastructure_3f8a1b2c4d5e) and in Healthy state.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">✔</span>
+    <div class="hc-body">
+      <strong>CacheTierHealth</strong> <em>[Warning]</em>
+      <p>All-NVMe cluster — software write-back cache active across all drives.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Understanding Storage Units — TiB vs TB</h2>
+  <p style="margin-bottom:12px;color:var(--muted)">Hard drive manufacturers use decimal (1 TB = 1,000,000,000,000 bytes). Windows reports in binary (1 TiB = 1,099,511,627,776 bytes). This creates an apparent ~9% discrepancy — the data is all there, it's just expressed in different units.</p>
+  <table class="tib-tb-table">
+    <thead><tr><th>Drive Label (TB)</th><th>Windows Reports (TiB)</th><th>Difference</th></tr></thead>
+    <tbody>
+      <tr><td>0.96 TB</td><td>0.873 TiB</td><td style="color:var(--red)">-9.3%</td></tr>
+      <tr><td>1.92 TB</td><td>1.747 TiB</td><td style="color:var(--red)">-9.0%</td></tr>
+      <tr><td>3.84 TB</td><td>3.492 TiB</td><td style="color:var(--red)">-9.1%</td></tr>
+      <tr><td>7.68 TB</td><td>6.986 TiB</td><td style="color:var(--red)">-9.0%</td></tr>
+      <tr><td>15.36 TB</td><td>13.97 TiB</td><td style="color:var(--red)">-9.1%</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<script>
+const tibValues = [55.88,55.88,55.58,41.61,41.36,41.36,13.79,13.97];
+const tbValues  = tibValues.map(v => Math.round(v * 1.0995 * 100) / 100);
+const labels    = ['Stage 1: Raw Physical','Stage 2: Vendor Label (TB)','Stage 3: Pool (after overhead)','Stage 4: After Reserve','Stage 5: After Infra Volume','Stage 6: Available','Stage 7: After Resiliency','Stage 8: Final Usable'];
+let useTiB = true;
+
+const ctx = document.getElementById('waterfallChart').getContext('2d');
+const chart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Capacity (TiB)',
+      data: tibValues,
+      backgroundColor: ['#0078d4','#005a9e','#106ebe','#e8a218','#d47a00','#107c10','#0e6e0e','#054b05'],
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + (useTiB ? ' TiB' : ' TB') } } },
+    scales: { x: { beginAtZero: true, title: { display: true, text: 'TiB' } } }
+  }
+});
+
+function toggleUnit() {
+  useTiB = !useTiB;
+  document.getElementById('unitLabel').textContent = useTiB ? 'TiB' : 'TB';
+  chart.data.datasets[0].data = useTiB ? tibValues : tbValues;
+  chart.data.datasets[0].label = useTiB ? 'Capacity (TiB)' : 'Capacity (TB)';
+  chart.options.scales.x.title.text = useTiB ? 'TiB' : 'TB';
+  chart.update();
+}
+</script>
+</body>
+</html>

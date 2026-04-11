@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="478" viewBox="0 0 900 478">
+  <rect width="900" height="478" fill="#faf9f8" rx="8"/>
+  <text x="450" y="36" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="600" fill="#201f1e">S2D Capacity Waterfall</text>
+  <line x1="220" y1="60" x2="220" y2="428" stroke="#c8c6c4" stroke-width="1"/>
+
+  <!-- Stage 1: Raw Physical -->
+  <g>
+    <text x="212" y="83" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">Stage 1: Raw Physical</text>
+    <rect x="220" y="60" width="660" height="36" fill="#0078d4" rx="3"/>
+    <text x="886" y="83" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">55.88 TiB</text>
+  </g>
+
+  <!-- Stage 2: Vendor Label (TB) -->
+  <g>
+    <text x="212" y="129" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">Stage 2: Vendor Label (TB)</text>
+    <rect x="220" y="106" width="660" height="36" fill="#005a9e" rx="3"/>
+    <text x="886" y="129" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">55.88 TiB  (61.44 TB)</text>
+  </g>
+
+  <!-- Stage 3: Pool (after overhead) -->
+  <g>
+    <text x="212" y="175" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">Stage 3: Pool (after overhead)</text>
+    <rect x="220" y="152" width="656" height="36" fill="#106ebe" rx="3"/>
+    <text x="882" y="175" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">55.58 TiB</text>
+  </g>
+
+  <!-- Stage 4: After Reserve (Warning) -->
+  <g>
+    <text x="212" y="221" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">Stage 4: After Reserve</text>
+    <rect x="220" y="198" width="491" height="36" fill="#e8a218" rx="3"/>
+    <text x="717" y="221" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">41.61 TiB ⚠</text>
+  </g>
+
+  <!-- Stage 5: After Infra Volume -->
+  <g>
+    <text x="212" y="267" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">Stage 5: After Infra Volume</text>
+    <rect x="220" y="244" width="488" height="36" fill="#d47a00" rx="3"/>
+    <text x="714" y="267" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">41.36 TiB</text>
+  </g>
+
+  <!-- Stage 6: Available -->
+  <g>
+    <text x="212" y="313" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">Stage 6: Available</text>
+    <rect x="220" y="290" width="488" height="36" fill="#107c10" rx="3"/>
+    <text x="714" y="313" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">41.36 TiB</text>
+  </g>
+
+  <!-- Stage 7: After Resiliency -->
+  <g>
+    <text x="212" y="359" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">Stage 7: After Resiliency</text>
+    <rect x="220" y="336" width="163" height="36" fill="#0e6e0e" rx="3"/>
+    <text x="389" y="359" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">13.79 TiB</text>
+  </g>
+
+  <!-- Stage 8: Final Usable -->
+  <g>
+    <text x="212" y="405" text-anchor="end" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">Stage 8: Final Usable</text>
+    <rect x="220" y="382" width="165" height="36" fill="#054b05" rx="3"/>
+    <text x="391" y="405" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#323130">13.97 TiB</text>
+  </g>
+
+  <text x="450" y="466" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="11" fill="#605e5c">Raw: 55.88 TiB | Usable: 13.97 TiB | Reserve: Warning | Efficiency: 25.0%</text>
+</svg>

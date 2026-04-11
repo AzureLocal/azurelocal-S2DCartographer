@@ -3,15 +3,21 @@
 ## Prerequisites
 
 | Requirement | Details |
-|-------------|---------|
-| **PowerShell 7.x** | Required. [Download here](https://github.com/PowerShell/PowerShell) |
-| **FailoverClusters module** | Required. Available on cluster nodes or management machines with RSAT |
-| **Storage module** | Required. Available on Windows Server and RSAT-enabled clients |
-| **ImportExcel** | Required for Excel report generation: `Install-Module ImportExcel` |
-| **WinRM access** | Required if running remotely. Port 5985/5986 open to cluster nodes |
-| **Az.KeyVault** | Optional. Required only if using Key Vault credential retrieval |
+| ------------- | -------- |
+| **PowerShell 7.2+** | Required. [Download here](https://github.com/PowerShell/PowerShell) |
+| **Storage / FailoverClusters RSAT** | Required on management machine, or run directly on a cluster node |
+| **WinRM / CIM access** | Required for remote connections. Ports 5985/5986 open to cluster nodes |
+| **ImportExcel** | Required for Excel reports: `Install-Module ImportExcel` |
+| **Microsoft Edge or Chrome** | Required for PDF output (headless print). Pre-installed on most Windows machines |
+| **Az.KeyVault** | Optional — only needed for Key Vault credential retrieval |
 
 ## Installation
+
+### From PowerShell Gallery
+
+```powershell
+Install-Module S2DCartographer -Scope CurrentUser
+```
 
 ### From source
 
@@ -21,47 +27,143 @@ Set-Location .\azurelocal-S2DCartographer
 Import-Module .\S2DCartographer.psd1 -Force
 ```
 
-### From PSGallery (planned for v1.0.0)
+---
+
+## Quick Start
+
+The fastest path — one command that connects, collects, analyzes, and generates an HTML report:
 
 ```powershell
-Install-Module S2DCartographer -Scope CurrentUser
+Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential (Get-Credential)
 ```
 
-## First Run
+Output files are written to `C:\S2DCartographer\` by default. Open the `.html` file in any browser.
 
-### Step 1 — Connect to your cluster
+---
+
+## Step-by-Step Workflow
+
+For more control, run the pipeline manually.
+
+### 1 — Connect to the cluster
 
 ```powershell
+# Remote — most common for management machines
 Connect-S2DCluster -ClusterName "c01-prd-bal" -Credential (Get-Credential)
-```
 
-You can also reuse an existing session:
-
-```powershell
-$cim = New-CimSession -ComputerName "node01" -Credential $cred
+# Remote with a pre-existing CimSession
+$cim = New-CimSession -ComputerName "node01.contoso.com" -Credential $cred
 Connect-S2DCluster -CimSession $cim
-```
 
-Or run locally on a cluster node:
-
-```powershell
+# Local — run directly on a cluster node (no credentials needed)
 Connect-S2DCluster -Local
 ```
 
-### Step 2 — Inventory physical disks
+### 2 — Collect data
+
+Run each collector individually, or let `Invoke-S2DCartographer` call them in the right order.
 
 ```powershell
-Get-S2DPhysicalDiskInventory | Format-Table NodeName, FriendlyName, Role, Size, HealthStatus, WearPercentage
+# Physical disks — role, health, wear, latency
+$disks = Get-S2DPhysicalDiskInventory
+$disks | Format-Table NodeName, FriendlyName, Role, Size, HealthStatus, WearPercentage
+
+# Storage pool — capacity, overcommit ratio, resiliency settings
+$pool = Get-S2DStoragePoolInfo
+$pool | Select-Object FriendlyName, TotalSize, RemainingSize, OvercommitRatio
+
+# Volumes — resiliency type, footprint, infra detection
+$volumes = Get-S2DVolumeMap
+$volumes | Format-Table FriendlyName, ResiliencySettingName, Size, FootprintOnPool, IsInfrastructureVolume
+
+# Cache tier — mode, disk count, all-flash detection
+$cache = Get-S2DCacheTierInfo
+
+# 8-stage capacity waterfall
+$waterfall = Get-S2DCapacityWaterfall
+$waterfall.Stages | Format-Table Stage, Name, Size, Delta, Status
+
+# 10 health checks
+$health = Get-S2DHealthStatus
+$health | Format-Table CheckName, Severity, Status, Details
 ```
 
-### Step 3 — Disconnect when done
+### 3 — Generate reports
+
+```powershell
+# HTML dashboard (default)
+$data = Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred -PassThru
+New-S2DReport -InputObject $data -Format Html -OutputDirectory "C:\Reports\"
+
+# All formats — HTML, Word, PDF, Excel
+New-S2DReport -InputObject $data -Format All -Author "Your Name" -Company "Your Company" `
+    -OutputDirectory "C:\Reports\"
+```
+
+### 4 — Generate diagrams
+
+```powershell
+# All 6 diagram types as SVG files
+New-S2DDiagram -InputObject $data -DiagramType All -OutputDirectory "C:\Reports\"
+
+# Waterfall only
+New-S2DDiagram -InputObject $data -DiagramType Waterfall -OutputDirectory "C:\Reports\"
+```
+
+### 5 — Disconnect
 
 ```powershell
 Disconnect-S2DCluster
 ```
 
+---
+
+## One-Shot Mode
+
+`Invoke-S2DCartographer` runs the entire pipeline automatically:
+
+```powershell
+# HTML report (default)
+Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential (Get-Credential)
+
+# All formats + all diagrams
+Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred `
+    -Format All -IncludeDiagrams `
+    -Author "Kristopher Turner" -Company "TierPoint" `
+    -OutputDirectory "C:\Deliverables\2026-04-11-c01-prd-bal\"
+
+# Return the data object for further processing
+$data = Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred -PassThru
+$data.CapacityWaterfall.Stages | Where-Object Status -ne 'OK'
+
+# Skip health checks for faster runs (capacity data only)
+Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred -SkipHealthChecks
+```
+
+---
+
+## Key Vault Integration
+
+For unattended runs and automation pipelines, retrieve cluster credentials from Azure Key Vault instead of prompting:
+
+```powershell
+# Key Vault stores the cluster admin password as a secret
+Invoke-S2DCartographer -ClusterName "c01-prd-bal" `
+    -KeyVaultName "kv-platform-prod" `
+    -SecretName "cluster-admin-password"
+```
+
+The Key Vault secret should contain the password as a plain string. The username defaults to the cluster name's domain admin. Use `Az.KeyVault` module and an authenticated Az session.
+
+---
+
 ## Capacity Unit Preference
 
-S2DCartographer always shows both TiB (binary/Windows) and TB (decimal/drive label) in every output. This cannot be disabled — it is a core design principle of the tool.
+S2DCartographer always shows both **TiB** (binary/Windows) and **TB** (decimal/drive label) in every output. This cannot be disabled — it is a core design principle.
 
-To understand why this matters, see [TiB vs TB](tib-vs-tb.md).
+```text
+Raw Capacity:  55.88 TiB  (61.44 TB)
+Usable Space:  13.97 TiB  (15.36 TB)
+```
+
+See [TiB vs TB](tib-vs-tb.md) for why this matters and how the conversion works.
