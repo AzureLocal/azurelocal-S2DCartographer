@@ -112,16 +112,64 @@ function Connect-S2DCluster {
                 }
             }
 
-            Write-Verbose "Connecting to cluster '$ClusterName' via CIM/WinRM (Authentication: $Authentication)..."
+            # Resolve the cluster name to a FQDN before opening the CIM session.
+            # On workgroup / non-domain-joined hosts, TrustedHosts is usually set
+            # to FQDNs; a short name will fail WinRM server-identity checks with
+            # 0x8009030e even when credentials are correct. Pass-through when
+            # the caller already supplied a FQDN.
+            $clusterTarget = $ClusterName
+            if ($ClusterName -notlike '*.*') {
+                try {
+                    $dnsEntry = [System.Net.Dns]::GetHostEntry($ClusterName)
+                    if ($dnsEntry -and $dnsEntry.HostName -and $dnsEntry.HostName -like '*.*') {
+                        $clusterTarget = $dnsEntry.HostName
+                        Write-Verbose "Resolved cluster short name '$ClusterName' to FQDN '$clusterTarget'."
+                    }
+                }
+                catch {
+                    Write-Verbose "DNS lookup for '$ClusterName' failed: $_. Trying short name as-is."
+                }
+            }
+
+            Write-Verbose "Connecting to cluster '$clusterTarget' via CIM/WinRM (Authentication: $Authentication)..."
             $cimParams = @{
-                ComputerName   = $ClusterName
+                ComputerName   = $clusterTarget
                 Authentication = $Authentication
                 ErrorAction    = 'Stop'
             }
             $cimParams['Credential'] = $Credential
-            $session = New-CimSession @cimParams
+            try {
+                $session = New-CimSession @cimParams
+            }
+            catch {
+                # Most common WinRM failures on workgroup/cross-domain hosts:
+                #   0x8009030e — TrustedHosts or credential mismatch
+                #   Access is denied — wrong credentials
+                #   No such host is known — DNS / name resolution
+                # Surface a precise remediation instead of the raw exception.
+                $rawMessage = $_.Exception.Message
+                $isDomainJoined = try { (Get-CimInstance Win32_ComputerSystem).PartOfDomain } catch { $false }
+                $remedy = @(
+                    "Failed to open CIM session to '$clusterTarget' (from input '$ClusterName') under authentication '$Authentication':"
+                    "  $rawMessage"
+                    ''
+                    'Common causes and fixes:'
+                    "  1. TrustedHosts does not contain the cluster FQDN. On this host, run:"
+                    "       Set-Item WSMan:\localhost\Client\TrustedHosts -Value '$clusterTarget' -Concatenate -Force"
+                    "  2. Credentials are wrong. The username you supplied was '$($Credential.UserName)'."
+                    '     For domain accounts use  DOMAIN\\user  or  user@fqdn.domain. Re-run and supply a cluster admin credential.'
+                    '  3. You passed a short cluster name that does not resolve via DNS. Re-run with the FQDN, for example:'
+                    "       Invoke-S2DCartographer -ClusterName '$ClusterName.<your-domain>' -Credential (Get-Credential)"
+                    '  4. Run locally on a cluster node with  Connect-S2DCluster -Local  if you do not need remote access.'
+                )
+                if (-not $isDomainJoined) {
+                    $remedy += '  (Detected: this host is not domain-joined, which is the most common trigger for 0x8009030e.)'
+                }
+                throw ($remedy -join [Environment]::NewLine)
+            }
             $Script:S2DSession.CimSession     = $session
             $Script:S2DSession.ClusterName    = $ClusterName
+            $Script:S2DSession.ClusterFqdn    = $clusterTarget
             $Script:S2DSession.Authentication = $Authentication
             $Script:S2DSession.Credential     = $Credential
         }

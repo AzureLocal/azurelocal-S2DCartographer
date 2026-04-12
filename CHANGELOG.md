@@ -8,6 +8,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.0.5] — 2026-04-12
+
+### Fixed
+
+- `Connect-S2DCluster`: when the caller supplies a short cluster name (e.g. `tplabs-clus01` instead of `tplabs-clus01.azrl.mgmt`), the cmdlet now resolves the short name to a FQDN via DNS before opening the CIM session. Workgroup and non-domain-joined hosts typically have `TrustedHosts` configured with FQDNs, so a short-name target would previously fail with `0x8009030e` at `New-CimSession` even with correct credentials. The resolved FQDN is stored in `$Script:S2DSession.ClusterFqdn`.
+- `Connect-S2DCluster`: `New-CimSession` failures in the `ByName` path are now caught and rethrown with a multi-line remediation message that calls out the four most common causes — TrustedHosts missing the cluster FQDN, wrong credentials, short-name DNS failure, and `-Local` as an alternative — instead of surfacing the raw WinRM exception. The message also reports whether the host is domain-joined, which is the usual trigger.
+
 ## [1.0.4] — 2026-04-12
 
 ### Fixed
