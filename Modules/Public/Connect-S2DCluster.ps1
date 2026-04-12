@@ -99,13 +99,26 @@ function Connect-S2DCluster {
     switch ($PSCmdlet.ParameterSetName) {
 
         'ByName' {
+            # Remote CIM/WinRM without explicit credentials almost always fails on
+            # workgroup or cross-domain hosts with a cryptic 'Access is denied'.
+            # Prompt interactively instead so the user gets a credential dialog,
+            # not a stack trace. Callers running non-interactively must supply
+            # -Credential up front, -Local to skip remoting, or a prebuilt
+            # -CimSession / -PSSession.
+            if (-not $Credential) {
+                $Credential = Get-Credential -Message "Enter credentials for cluster '$ClusterName'"
+                if (-not $Credential) {
+                    throw "Credentials are required to connect to cluster '$ClusterName'. Re-run with -Credential, or use -Local when running on a cluster node."
+                }
+            }
+
             Write-Verbose "Connecting to cluster '$ClusterName' via CIM/WinRM (Authentication: $Authentication)..."
             $cimParams = @{
                 ComputerName   = $ClusterName
                 Authentication = $Authentication
                 ErrorAction    = 'Stop'
             }
-            if ($Credential) { $cimParams['Credential'] = $Credential }
+            $cimParams['Credential'] = $Credential
             $session = New-CimSession @cimParams
             $Script:S2DSession.CimSession     = $session
             $Script:S2DSession.ClusterName    = $ClusterName

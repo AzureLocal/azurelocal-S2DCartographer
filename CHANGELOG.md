@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.0.4] — 2026-04-12
+
+### Fixed
+
+- `Connect-S2DCluster`: when `-Credential` is not supplied in the `ByName` parameter set, the cmdlet now prompts interactively via `Get-Credential` instead of silently falling through to `New-CimSession` with the current logged-on user context — which almost always fails on workgroup or cross-domain hosts with a cryptic "Access is denied". Callers running non-interactively must supply `-Credential`, use `-Local`, or pass a prebuilt `-CimSession`/`-PSSession`.
+
 ## [1.0.3] — 2026-04-12
 
 ### Fixed
