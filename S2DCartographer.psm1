@@ -24,6 +24,7 @@ $Script:S2DSession = @{
     ClusterName    = $null
     ClusterFqdn    = $null
     Nodes          = @()
+    NodeTargets    = @{}
     CimSession     = $null
     PSSession      = $null
     IsConnected    = $false

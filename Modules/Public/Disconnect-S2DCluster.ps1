@@ -51,6 +51,7 @@ function Disconnect-S2DCluster {
         ClusterName    = $null
         ClusterFqdn    = $null
         Nodes          = @()
+        NodeTargets    = @{}
         CimSession     = $null
         PSSession      = $null
         IsConnected    = $false

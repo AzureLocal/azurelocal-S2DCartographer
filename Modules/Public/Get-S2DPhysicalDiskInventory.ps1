@@ -332,10 +332,23 @@ function Get-S2DPhysicalDiskInventory {
     }
     elseif ($session -and $nodes) {
         foreach ($node in $nodes) {
-            Write-Verbose "  Collecting physical disks from node '$node'..."
+            # Resolve the CIM target name via the NodeTargets map populated by
+            # Connect-S2DCluster. On workgroup/non-domain-joined management hosts, the
+            # short name returned by MSCluster_Node is not usable for WinRM — the FQDN
+            # is what TrustedHosts is configured for. Falls back to the short name when
+            # no map is available (e.g. tests that stage a node list directly).
+            $cimTarget = if ($Script:S2DSession.NodeTargets -and
+                             $Script:S2DSession.NodeTargets.ContainsKey($node)) {
+                $Script:S2DSession.NodeTargets[$node]
+            } else {
+                $node
+            }
+
+            $verboseSuffix = if ($cimTarget -ne $node) { " (via '$cimTarget')" } else { '' }
+            Write-Verbose "  Collecting physical disks from node '$node'$verboseSuffix..."
             try {
                 $nodeCimParams = @{
-                    ComputerName   = $node
+                    ComputerName   = $cimTarget
                     Authentication = ($Script:S2DSession.Authentication ?? 'Negotiate')
                     ErrorAction    = 'Stop'
                 }
@@ -343,12 +356,14 @@ function Get-S2DPhysicalDiskInventory {
                     $nodeCimParams['Credential'] = $Script:S2DSession.Credential
                 }
                 $nodeCim = New-CimSession @nodeCimParams
+                # Keep the short NodeName in the output so reports and downstream
+                # consumers continue to see the cluster's canonical node identifier.
                 $disks = & $getDisksBlock $nodeCim $node
                 $allDisks += $disks
                 $nodeCim | Remove-CimSession
             }
             catch {
-                Write-Warning "Could not collect disks from node '$node': $_"
+                Write-Warning "Could not collect disks from node '$node' (target '$cimTarget'): $_"
             }
         }
     }

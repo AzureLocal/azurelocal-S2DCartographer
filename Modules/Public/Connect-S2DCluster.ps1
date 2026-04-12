@@ -173,7 +173,7 @@ function Connect-S2DCluster {
         # Clean up partially-created sessions on failure
         if ($Script:S2DSession.CimSession) { $Script:S2DSession.CimSession | Remove-CimSession -ErrorAction SilentlyContinue }
         $Script:S2DSession = @{
-            ClusterName    = $null; ClusterFqdn = $null; Nodes = @()
+            ClusterName    = $null; ClusterFqdn = $null; Nodes = @(); NodeTargets = @{}
             CimSession     = $null; PSSession   = $null
             IsConnected    = $false; IsLocal     = $false
             Authentication = 'Negotiate'; Credential = $null
@@ -199,6 +199,82 @@ function Connect-S2DCluster {
     }
     catch {
         Write-Warning "Could not enumerate cluster nodes: $_"
+    }
+
+    # Build the NodeTargets lookup map (short name → FQDN) used by per-node fan-out
+    # operations. On workgroup/non-domain-joined management machines the short name
+    # returned by MSCluster_Node enumeration is not valid for CIM/WinRM; TrustedHosts
+    # typically contains FQDNs. Resolving once here keeps every collector consistent.
+    $Script:S2DSession.NodeTargets = @{}
+    $clusterFqdnForResolution = if ($Script:S2DSession.ClusterFqdn) {
+        $Script:S2DSession.ClusterFqdn
+    } else {
+        $Script:S2DSession.ClusterName
+    }
+
+    foreach ($nodeName in @($Script:S2DSession.Nodes)) {
+        if (-not $nodeName) { continue }
+        $fqdn = Resolve-S2DNodeFqdn -ShortName $nodeName -ClusterFqdn $clusterFqdnForResolution
+        $Script:S2DSession.NodeTargets[$nodeName] = $fqdn
+    }
+
+    # Preflight fan-out — when a remote CIM session is active, verify that at least
+    # one resolved node target is actually reachable under the configured credentials
+    # and TrustedHosts. Failing here gives the user one precise, actionable message
+    # instead of N repeated generic WinRM warnings from per-collector fan-out paths.
+    if (-not $Script:S2DSession.IsLocal -and
+        $Script:S2DSession.CimSession -and
+        $Script:S2DSession.NodeTargets.Count -gt 0) {
+
+        $sampleNode = $Script:S2DSession.Nodes | Select-Object -First 1
+        $sampleTarget = $Script:S2DSession.NodeTargets[$sampleNode]
+
+        Write-Verbose "Preflight: validating per-node remoting against '$sampleTarget'..."
+        $preflightParams = @{
+            ComputerName   = $sampleTarget
+            Authentication = $Script:S2DSession.Authentication
+            ErrorAction    = 'Stop'
+        }
+        if ($Script:S2DSession.Credential) { $preflightParams['Credential'] = $Script:S2DSession.Credential }
+
+        try {
+            $probe = New-CimSession @preflightParams
+            Remove-CimSession -CimSession $probe -ErrorAction SilentlyContinue
+        }
+        catch {
+            $fqdnList = ($Script:S2DSession.NodeTargets.Values | Sort-Object) -join ','
+            $isDomainJoined = try { (Get-CimInstance Win32_ComputerSystem).PartOfDomain } catch { $false }
+            $remedyHints = @(
+                "Fan-out preflight to '$sampleTarget' failed under authentication '$($Script:S2DSession.Authentication)': $($_.Exception.Message)"
+                ''
+                'The cluster connection succeeded but per-node collection cannot reach the resolved node FQDNs.'
+                'Pick one of the following remediations:'
+                "  1. Run from a domain-joined management host that trusts '$($Script:S2DSession.Credential.UserName)'."
+                '  2. Run locally on a cluster node with  Connect-S2DCluster -Local'
+                '  3. Add the node FQDNs to TrustedHosts on this machine, e.g.:'
+                "       Set-Item WSMan:\localhost\Client\TrustedHosts -Value '$fqdnList' -Concatenate -Force"
+                "       winrm set winrm/config/client `"@{TrustedHosts=`'$fqdnList`'}`"  (legacy form)"
+            )
+            if (-not $isDomainJoined) {
+                $remedyHints += '  (Detected: this host is not domain-joined, which is the most common trigger.)'
+            }
+
+            # Clean up the cluster CIM session before throwing so the module is in a
+            # clean state — the session we opened is technically fine, but leaving it
+            # connected after reporting failure would confuse retry logic.
+            if ($Script:S2DSession.CimSession) {
+                $Script:S2DSession.CimSession | Remove-CimSession -ErrorAction SilentlyContinue
+            }
+            $Script:S2DSession = @{
+                ClusterName    = $null; ClusterFqdn = $null; Nodes = @(); NodeTargets = @{}
+                CimSession     = $null; PSSession   = $null
+                IsConnected    = $false; IsLocal     = $false
+                Authentication = 'Negotiate'; Credential = $null
+                CollectedData  = @{}
+            }
+
+            throw ($remedyHints -join [Environment]::NewLine)
+        }
     }
 
     $Script:S2DSession.IsConnected = $true
