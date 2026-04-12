@@ -8,6 +8,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.0.6] — 2026-04-12
+
+### Fixed
+
+- `Connect-S2DCluster`: short cluster name resolution now checks `TrustedHosts` first and promotes the short name to a matching FQDN entry (e.g. `tplabs-clus01` → `tplabs-clus01.azrl.mgmt`). On workgroup / non-domain-joined hosts, DNS suffix search lists for internal AD domains are usually absent, so the 1.0.5 DNS-only resolver silently fell through to the short name and produced `0x8009030e`. `TrustedHosts` is authoritative on these hosts and already reflects what WinRM will accept.
+- Resolution order is now: TrustedHosts → DNS (`GetHostEntry`) → short name pass-through → precise remediation error.
+
+### Changed
+
+- `Connect-S2DCluster` credential prompt message now includes the accepted username formats (`DOMAIN\user` or `user@fqdn.domain`) and explicitly notes that a plain local username will not authenticate against a domain cluster. Renders directly in the `Get-Credential` dialog.
+
 ## [1.0.5] — 2026-04-12
 
 ### Fixed

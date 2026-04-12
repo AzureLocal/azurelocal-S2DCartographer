@@ -106,7 +106,16 @@ function Connect-S2DCluster {
             # -Credential up front, -Local to skip remoting, or a prebuilt
             # -CimSession / -PSSession.
             if (-not $Credential) {
-                $Credential = Get-Credential -Message "Enter credentials for cluster '$ClusterName'"
+                $credMessage = @(
+                    "Enter credentials for cluster '$ClusterName'."
+                    ''
+                    'Use one of these username formats:'
+                    '  DOMAIN\user       (e.g. MGMT\svc.azl.local)'
+                    '  user@fqdn.domain  (e.g. svc.azl.local@azrl.mgmt)'
+                    ''
+                    'A plain local username will not authenticate against a domain cluster.'
+                ) -join [Environment]::NewLine
+                $Credential = Get-Credential -Message $credMessage
                 if (-not $Credential) {
                     throw "Credentials are required to connect to cluster '$ClusterName'. Re-run with -Credential, or use -Local when running on a cluster node."
                 }
@@ -117,17 +126,51 @@ function Connect-S2DCluster {
             # to FQDNs; a short name will fail WinRM server-identity checks with
             # 0x8009030e even when credentials are correct. Pass-through when
             # the caller already supplied a FQDN.
+            #
+            # Resolution order:
+            #   1. TrustedHosts — if the user already trusts an FQDN that starts
+            #      with the short name, use it. This is the most reliable source
+            #      on workgroup hosts where AD DNS suffixes are not configured.
+            #   2. DNS forward+reverse via GetHostEntry.
+            #   3. Fall through to the short name and let the try/catch emit a
+            #      precise remediation message.
             $clusterTarget = $ClusterName
             if ($ClusterName -notlike '*.*') {
+                $resolvedVia = $null
+
                 try {
-                    $dnsEntry = [System.Net.Dns]::GetHostEntry($ClusterName)
-                    if ($dnsEntry -and $dnsEntry.HostName -and $dnsEntry.HostName -like '*.*') {
-                        $clusterTarget = $dnsEntry.HostName
-                        Write-Verbose "Resolved cluster short name '$ClusterName' to FQDN '$clusterTarget'."
+                    $trustedHostsRaw = (Get-Item WSMan:\localhost\Client\TrustedHosts -ErrorAction SilentlyContinue).Value
+                    if ($trustedHostsRaw) {
+                        $entries = $trustedHostsRaw -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+                        $matches = $entries | Where-Object { $_ -like "$ClusterName.*" }
+                        if ($matches) {
+                            $clusterTarget = ($matches | Select-Object -First 1)
+                            $resolvedVia = 'TrustedHosts'
+                            if (@($matches).Count -gt 1) {
+                                Write-Verbose "Multiple TrustedHosts entries match '$ClusterName.*' — using '$clusterTarget'. Other matches: $((@($matches) | Select-Object -Skip 1) -join ', ')"
+                            }
+                        }
                     }
                 }
                 catch {
-                    Write-Verbose "DNS lookup for '$ClusterName' failed: $_. Trying short name as-is."
+                    Write-Verbose "TrustedHosts lookup failed: $_"
+                }
+
+                if (-not $resolvedVia) {
+                    try {
+                        $dnsEntry = [System.Net.Dns]::GetHostEntry($ClusterName)
+                        if ($dnsEntry -and $dnsEntry.HostName -and $dnsEntry.HostName -like '*.*') {
+                            $clusterTarget = $dnsEntry.HostName
+                            $resolvedVia = 'DNS'
+                        }
+                    }
+                    catch {
+                        Write-Verbose "DNS lookup for '$ClusterName' failed: $_. Trying short name as-is."
+                    }
+                }
+
+                if ($resolvedVia) {
+                    Write-Verbose "Resolved cluster short name '$ClusterName' to FQDN '$clusterTarget' via $resolvedVia."
                 }
             }
 
