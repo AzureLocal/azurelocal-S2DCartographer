@@ -44,7 +44,7 @@ Describe 'Resolve-S2DNodeFqdn' {
     }
 }
 
-Describe 'Get-S2DPhysicalDiskInventory fan-out targets' {
+Describe 'Get-S2DPhysicalDiskInventory fan-out targets' -Skip:(-not $IsWindows) {
 
     BeforeEach {
         InModuleScope S2DCartographer {
