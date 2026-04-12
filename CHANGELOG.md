@@ -8,6 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.0.3] — 2026-04-12
+
 ### Fixed
 
 - **Workgroup / non-domain-joined fan-out failure** — `Connect-S2DCluster` now resolves each enumerated short node name to a fully qualified target (via the cluster FQDN suffix, falling back to DNS) and stores the mapping in `$Script:S2DSession.NodeTargets`. `Get-S2DPhysicalDiskInventory` opens per-node CIM sessions against the FQDN target instead of the short name, which matches typical `TrustedHosts` configuration on workgroup management hosts. Closes [#33](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/33).
