@@ -87,7 +87,7 @@ function Get-S2DHealthStatus {
     else {
         New-HealthCheck 'ReserveAdequacy' 'Critical' 'Warn' 'Could not determine reserve status — no waterfall data.' 'Run Get-S2DCapacityWaterfall to evaluate reserve space.'
     }
-    $checks.Add($check1)
+    $null = $checks.Add($check1)
 
     # ── Check 2: Disk symmetry ────────────────────────────────────────────────
     $byNode = @($physDisks | Group-Object NodeName)
@@ -110,7 +110,7 @@ function Get-S2DHealthStatus {
             "Disk count is inconsistent across nodes: $symmetryDetail" `
             "Investigate missing or additional disks. S2D requires symmetric disk configurations across nodes."
     }
-    $checks.Add($check2)
+    $null = $checks.Add($check2)
 
     # ── Check 3: Volume health ────────────────────────────────────────────────
     $degradedVolumes = @($volumes | Where-Object {
@@ -127,7 +127,7 @@ function Get-S2DHealthStatus {
             "Degraded or detached volume(s) detected: $labels" `
             "Run Get-VirtualDisk to investigate. Check cluster event logs and storage health reports."
     }
-    $checks.Add($check3)
+    $null = $checks.Add($check3)
 
     # ── Check 4: Disk health ──────────────────────────────────────────────────
     $unhealthyDisks = @($physDisks | Where-Object { $_.HealthStatus -ne 'Healthy' })
@@ -141,7 +141,7 @@ function Get-S2DHealthStatus {
             "Non-healthy disk(s) detected: $labels" `
             "Replace failed or degraded disks promptly. Check Get-PhysicalDisk -HasMediaFailure."
     }
-    $checks.Add($check4)
+    $null = $checks.Add($check4)
 
     # ── Check 5: NVMe wear ────────────────────────────────────────────────────
     $wornDisks = @($physDisks | Where-Object {
@@ -157,7 +157,7 @@ function Get-S2DHealthStatus {
             "NVMe drive(s) with wear > 80%: $labels" `
             "Plan replacement for high-wear NVMe drives before they reach 100% (end of rated write endurance)."
     }
-    $checks.Add($check5)
+    $null = $checks.Add($check5)
 
     # ── Check 6: Thin overcommit ──────────────────────────────────────────────
     $isOvercommitted = $pool -and $pool.OvercommitRatio -gt 1.0
@@ -170,7 +170,7 @@ function Get-S2DHealthStatus {
             "Pool is overcommitted. Provisioned: $($pool.ProvisionedSize.TiB) TiB, Pool total: $($pool.TotalSize.TiB) TiB (ratio: $($pool.OvercommitRatio)x)." `
             "Monitor actual data growth. Thin-provisioned volumes can run out of pool space unexpectedly. Add capacity or reduce provisioned sizes."
     }
-    $checks.Add($check6)
+    $null = $checks.Add($check6)
 
     # ── Check 7: Firmware consistency ─────────────────────────────────────────
     $firmwareInconsistent = $false
@@ -192,7 +192,7 @@ function Get-S2DHealthStatus {
             "Firmware inconsistency detected: $($firmwareDetail.Trim())" `
             "Update all drives of the same model to the latest firmware. Use the vendor update tool or Dell/HPE/Lenovo HCI management utilities."
     }
-    $checks.Add($check7)
+    $null = $checks.Add($check7)
 
     # ── Check 8: Rebuild capacity ─────────────────────────────────────────────
     # Cluster can survive a node failure and fully rebuild if:
@@ -224,7 +224,7 @@ function Get-S2DHealthStatus {
         New-HealthCheck 'RebuildCapacity' 'Critical' 'Warn' $rebuildDetail `
             "Free pool space by removing or shrinking volumes. Consider adding capacity drives."
     }
-    $checks.Add($check8)
+    $null = $checks.Add($check8)
 
     # ── Check 9: Infrastructure volume ────────────────────────────────────────
     $infraVolumes = @($volumes | Where-Object IsInfrastructureVolume)
@@ -245,7 +245,7 @@ function Get-S2DHealthStatus {
             "No infrastructure volume detected. Expected on Azure Local clusters." `
             "This may be normal for Windows Server S2D. On Azure Local, check cluster deployment status."
     }
-    $checks.Add($check9)
+    $null = $checks.Add($check9)
 
     # ── Check 10: Cache tier health ───────────────────────────────────────────
     $check10 = if (-not $cacheTier) {
@@ -269,7 +269,7 @@ function Get-S2DHealthStatus {
             "Cache tier state is '$($cacheTier.CacheState)'. Mode: $($cacheTier.CacheMode)." `
             "Investigate cache tier with Get-ClusterS2D and Get-PhysicalDisk."
     }
-    $checks.Add($check10)
+    $null = $checks.Add($check10)
 
     # ── Filter by CheckName ───────────────────────────────────────────────────
     $result = if ($CheckName) {
