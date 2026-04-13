@@ -51,7 +51,7 @@ Pure PowerShell `.docx` — no Microsoft Office or COM automation required. Uses
 - Capacity Waterfall — 8-stage table
 - Physical Disk Inventory — full table with all disk fields
 - Volume Map — per-volume resiliency and capacity
-- Health Assessment — all 10 checks with severity-coded status and remediation guidance
+- Health Assessment — all 11 checks with severity-coded status and remediation guidance
 - Appendix A: TiB vs TB Explanation
 - Appendix B: S2D Reserve Space Best Practices
 
@@ -113,7 +113,7 @@ Multi-tab `.xlsx` using the [ImportExcel](https://github.com/dfinke/ImportExcel)
 | **Physical Disks** | Full disk inventory — node, model, media type, role, capacity, wear %, firmware |
 | **Storage Pool** | Pool name, health, total/allocated/remaining, overcommit ratio, resiliency settings |
 | **Volumes** | All volumes — resiliency, copies, provisioning type, size, footprint, efficiency |
-| **Health Checks** | All 10 checks — name, severity, status, details, remediation |
+| **Health Checks** | All 11 checks — name, severity, status, details, remediation |
 | **Metadata** | Module version, collection timestamp, cluster FQDN, node list |
 
 **Generate:**
@@ -195,6 +195,36 @@ New-S2DReport -InputObject $data -Format Csv -OutputDirectory "C:\Reports\"
 # Or combine with All
 New-S2DReport -InputObject $data -Format All, Csv -OutputDirectory "C:\Reports\"
 ```
+
+---
+
+## What-If Modeling Reports
+
+`Invoke-S2DCapacityWhatIf` generates standalone what-if reports that are independent of the cluster audit reports above. They model capacity changes without a live cluster.
+
+**Formats:**
+
+| Format | Content |
+| --- | --- |
+| **HTML** | Side-by-side Chart.js waterfall charts (baseline left, projected right), KPI summary row (usable capacity, delta, reserve status, efficiency), scenario badge, stage-by-stage delta table with color-coded delta column |
+| **JSON** | Structured output (SchemaVersion 1.0, Type S2DWhatIfResult) with both waterfalls flattened to stage arrays and all TiB/TB delta values |
+
+**Generate:**
+
+```powershell
+# From a JSON snapshot — no live cluster required
+Invoke-S2DCapacityWhatIf `
+    -BaselineSnapshot C:\snapshots\clus01-20260413.json `
+    -AddNodes 2 `
+    -OutputDirectory C:\Reports\WhatIf `
+    -Format Html, Json
+
+# From a live run, piped directly
+Invoke-S2DCartographer -ClusterName clus01 -Credential $cred -PassThru |
+    Invoke-S2DCapacityWhatIf -ChangeResiliency 2 -OutputDirectory C:\Reports\WhatIf
+```
+
+See [What-If Modeling](what-if.md) for all scenario parameters and worked examples.
 
 ---
 

@@ -22,7 +22,8 @@ S2DCartographer scans a live cluster and maps your entire S2D storage stack — 
 | **Capacity waterfall** | 8 stages from raw physical to final usable capacity |
 | **TiB/TB dual-display** | Every capacity value shows both binary and decimal units |
 | **Reserve validation** | Live comparison of actual vs. recommended reserve space |
-| **Health assessments** | 10 pass/fail checks with remediation guidance |
+| **Health assessments** | 11 pass/fail checks with remediation guidance, including thin provisioning risk |
+| **What-if modeling** | Model capacity impact of adding nodes, disks, or changing resiliency from a JSON snapshot — no live cluster required |
 | **Reports** | HTML, Word, PDF, Excel — ready for customer deliverables |
 | **Data export** | JSON snapshot + per-collector CSVs for downstream tooling |
 | **Diagrams** | SVG waterfall, disk-node map, pool layout, resiliency views |

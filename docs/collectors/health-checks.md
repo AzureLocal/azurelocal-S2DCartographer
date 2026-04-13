@@ -1,6 +1,6 @@
 # Get-S2DHealthStatus
 
-Runs all 10 S2D health checks and returns pass/warn/fail results with severity levels and remediation guidance.
+Runs all 11 S2D health checks and returns pass/warn/fail results with severity levels and remediation guidance.
 
 ---
 
@@ -54,7 +54,7 @@ After each run, `Get-S2DHealthStatus` writes an overall health string to `$Scrip
 
 ---
 
-## The 10 Health Checks
+## The 11 Health Checks
 
 ### 1 — ReserveAdequacy
 
@@ -144,14 +144,23 @@ Checks that no NVMe drive exceeds 80% wear percentage.
 
 **Severity:** Warning
 
-Checks whether the total logical size of all thin-provisioned volumes exceeds pool capacity.
+Evaluates maximum potential pool footprint for all thin-provisioned volumes against pool total capacity. Unlike the `OvercommitRatio` on the pool object (which only reflects data already written), this check projects the worst-case scenario: what happens if every thin volume is written completely full.
+
+**Maximum potential footprint** = `Size × NumberOfDataCopies` per thin volume, summed across all thin workload volumes. This is the pool space that would be consumed if all provisioned capacity were actually written under the current resiliency configuration.
 
 | Status | Condition |
 | --- | --- |
-| Pass | `OvercommitRatio ≤ 1.0` |
-| Warn | `OvercommitRatio > 1.0` |
+| Pass | No thin volumes present, or `maxPotentialFootprint ÷ poolTotal ≤ 80%` |
+| Warn | `maxPotentialFootprint ÷ poolTotal > 80%` (approaching danger) |
+| Warn | `pool.OvercommitRatio > 1.0` (already overcommitted based on written data) |
+| Fail | `maxPotentialFootprint ÷ poolTotal > 100%` (pool exhaustion guaranteed if volumes fill up) |
 
-**Remediation:** Monitor actual data growth. Add capacity drives or reduce provisioned volume sizes before the pool runs out of physical space.
+**Details field:** Lists the number of thin volumes, current pool overcommit ratio, max potential footprint, and the resulting risk percentage.
+
+**Remediation (Warn/Fail):** Add capacity drives to the pool, reduce provisioned volume sizes, or convert high-risk volumes to fixed provisioning. Use `Get-S2DVolumeMap` to inspect `MaxPotentialFootprint` and `ThinGrowthHeadroom` per volume.
+
+!!! danger "Why this fires before overcommit occurs"
+    The old check fired only when `OvercommitRatio > 1.0` — after the pool was already overcommitted. This check fires at 80% and 100% of *maximum potential* footprint, giving time to act before volumes fill up and pool exhaustion becomes inevitable.
 
 ---
 
@@ -219,6 +228,29 @@ Checks cache tier health across both physical and software cache configurations.
 | Warn | `CacheState = Degraded`, or cache tier data unavailable |
 
 **Remediation (Degraded):** Check cache disk health with `Get-S2DPhysicalDiskInventory`. Replace failed cache drives promptly — a degraded cache tier significantly reduces write performance.
+
+---
+
+### 11 — ThinReserveRisk
+
+**Severity:** Critical
+
+Checks whether the maximum uncommitted growth of thin-provisioned volumes would consume the recommended rebuild reserve space. A cluster can survive a drive failure only if the pool has enough free space to complete a rebuild; thin volume growth that erodes that reserve creates a latent risk that normal pool utilisation monitoring does not catch.
+
+**Uncommitted growth bytes** = `max(0, maxPotentialFootprint − currentThinFootprint)` — the additional pool space thin volumes could consume if written to full.
+
+**Free space after max growth** = `poolFree − uncommittedGrowthBytes`
+
+| Status | Condition |
+| --- | --- |
+| Pass | No thin volumes present, or `freeAfterMaxGrowth ≥ reserveRecommended` |
+| Warn | `freeAfterMaxGrowth < reserveRecommended` (growth could consume reserve) |
+| Fail | `freeAfterMaxGrowth < 0` (growth would exhaust the entire pool) |
+
+**Remediation (Warn/Fail):** Add capacity drives to increase pool free space, reduce provisioned volume sizes, or convert high-risk volumes to fixed provisioning. Use `Invoke-S2DCapacityWhatIf` to model how additional drives would affect the reserve margin.
+
+!!! note "Relationship to Check 1 (ReserveAdequacy)"
+    `ReserveAdequacy` compares *current* pool free space against the recommended reserve. `ThinReserveRisk` asks a forward-looking question: if all thin volumes fill up, will the reserve still be intact? Both can be passing today while `ThinReserveRisk` warns about future risk.
 
 ---
 

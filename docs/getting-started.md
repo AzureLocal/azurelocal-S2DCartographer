@@ -98,7 +98,7 @@ $cache = Get-S2DCacheTierInfo
 $waterfall = Get-S2DCapacityWaterfall
 $waterfall.Stages | Format-Table Stage, Name, Size, Delta, Status
 
-# 10 health checks
+# 11 health checks (includes thin provisioning risk checks 6 and 11)
 $health = Get-S2DHealthStatus
 $health | Format-Table CheckName, Severity, Status, Details
 ```
@@ -114,6 +114,24 @@ New-S2DReport -InputObject $data -Format All -Author "Your Name" -Company "Your 
 # Single format only
 New-S2DReport -InputObject $data -Format Html -OutputDirectory "C:\Reports\"
 ```
+
+### 3a — What-if capacity modeling (optional)
+
+Use the JSON snapshot written in step 3 to model hardware changes without hitting the cluster again:
+
+```powershell
+# Model adding 2 nodes — no live cluster required
+Invoke-S2DCapacityWhatIf `
+    -BaselineSnapshot "C:\Reports\c01-prd-bal\20260413-1430\S2DCartographer_c01-prd-bal_20260413-1430.json" `
+    -AddNodes 2 `
+    -OutputDirectory "C:\Reports\WhatIf" `
+    -Format Html, Json
+
+# Or pipe directly from a live run
+$data | Invoke-S2DCapacityWhatIf -AddNodes 2 -AddDisksPerNode 4 -OutputDirectory "C:\Reports\WhatIf"
+```
+
+See [What-If Modeling](what-if.md) for all scenario types and worked examples.
 
 ### 4 — Generate diagrams
 

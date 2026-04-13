@@ -40,6 +40,8 @@ Returns `S2DVolume[]` — one object per virtual disk.
 | `IsInfrastructureVolume` | `bool` | Azure Local infrastructure volume detection (see below) |
 | `EfficiencyPercent` | `double` | Resiliency efficiency (logical ÷ footprint × 100) |
 | `OvercommitRatio` | `double` | Thin overcommit ratio for this volume (`AllocatedSize ÷ FootprintOnPool`) |
+| `ThinGrowthHeadroom` | `S2DCapacity` | Remaining write headroom before pool footprint equals provisioned size: `Size − AllocatedSize`. `$null` for fixed-provisioned volumes. |
+| `MaxPotentialFootprint` | `S2DCapacity` | Maximum pool space this volume could consume if written completely full: `Size × NumberOfDataCopies`. `$null` for fixed-provisioned volumes. |
 
 ---
 
@@ -107,6 +109,11 @@ Get-S2DVolumeMap | Where-Object IsInfrastructureVolume -eq $false
 
 # Thin-provisioned volumes with overcommit
 Get-S2DVolumeMap | Where-Object ProvisioningType -eq 'Thin' | Format-Table FriendlyName, Size, AllocatedSize, OvercommitRatio
+
+# Thin provisioning risk — max potential footprint vs current pool footprint
+Get-S2DVolumeMap |
+    Where-Object { $_.ProvisioningType -eq 'Thin' -and $_.MaxPotentialFootprint } |
+    Format-Table FriendlyName, Size, ThinGrowthHeadroom, MaxPotentialFootprint, AllocatedSize
 
 # Unhealthy volumes
 Get-S2DVolumeMap | Where-Object HealthStatus -ne 'Healthy' | Format-List
