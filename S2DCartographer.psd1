@@ -1,6 +1,6 @@
 @{
     RootModule           = 'S2DCartographer.psm1'
-    ModuleVersion        = '1.0.8'
+    ModuleVersion        = '1.1.0'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
     Author               = 'Azure Local Cloud'
@@ -8,6 +8,9 @@
     Copyright            = '(c) 2026 Hybrid Cloud Solutions. All rights reserved.'
     Description          = 'Storage Spaces Direct analysis, visualization, and reporting for Azure Local and Windows Server clusters. Inventories physical disks, storage pools, and volumes; computes capacity waterfalls with TiB/TB dual display; generates HTML dashboards, Word documents, PDFs, and Excel workbooks with publication-quality diagrams.'
     PowerShellVersion    = '7.2'
+    RequiredModules      = @(
+        @{ ModuleName = 'ImportExcel'; ModuleVersion = '7.0.0' }
+    )
 
     FunctionsToExport    = @(
         'Connect-S2DCluster',
@@ -47,6 +50,22 @@
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-s2d-cartographer/main/docs/assets/images/s2dcartographer-icon.svg'
             ReleaseNotes = @'
+## v1.1.0 — All formats by default, per-run output folders, session logging
+
+### Added
+- **Per-run output folder structure** — each `Invoke-S2DCartographer` run writes to `<OutputDirectory>\<ClusterName>\<yyyyMMdd-HHmm>\`. Multiple clusters and repeated runs never overwrite each other. Diagrams go into a `diagrams\` subfolder within the run folder.
+- **Session log file** — a `.log` file is written to the run folder capturing each collection step with duration, warnings, final output paths, overall health, and total run time. A fallback log is written to `OutputDirectory` root if the run fails before the cluster name is known.
+
+### Changed
+- `Invoke-S2DCartographer` default `-Format` changed from `Html` to `All` — HTML, Word, PDF, and Excel are all generated unless a specific format is requested.
+- `ImportExcel` added to `RequiredModules` — installs automatically from PSGallery alongside S2DCartographer. No manual `Install-Module ImportExcel` step required.
+- Pool Allocation Breakdown bar height increased from 90 px to 180 px for better readability.
+
+### Documentation
+- `connecting.md` — new **Remoting Prerequisites** section covering WinRM setup, TrustedHosts configuration with FQDN guidance, firewall ports, and the node fan-out flow with a diagram showing how per-node CIM sessions are established.
+- `getting-started.md` — updated Quick Start to show per-run folder structure, updated examples to reflect new default format.
+- `reports.md` — updated format examples, ImportExcel note, and added output folder structure documentation.
+
 ## v1.0.8 — Fix Get-S2DHealthStatus crash on live clusters
 
 ### Fixed

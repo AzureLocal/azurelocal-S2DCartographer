@@ -8,6 +8,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-04-13
+
+### Added
+
+- **Per-run output folder structure** — each `Invoke-S2DCartographer` run writes to `<OutputDirectory>\<ClusterName>\<yyyyMMdd-HHmm>\`. Multiple clusters and repeated runs never overwrite each other. Diagrams go into a `diagrams\` subfolder within the run folder. Closes [#37](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/37).
+- **Session log file** — a `.log` file is written to the run folder capturing each collection step with duration, warnings, final output paths, overall health, and total run time. A fallback log is written to `OutputDirectory` root if the run fails before the cluster name is known. Closes [#37](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/37).
+
+### Changed
+
+- `Invoke-S2DCartographer` default `-Format` changed from `Html` to `All` — HTML, Word, PDF, and Excel are all generated unless a specific format is requested. Closes [#36](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/36).
+- `ImportExcel` added to `RequiredModules` in the module manifest — installs automatically from PSGallery. No manual `Install-Module ImportExcel` step required. Closes [#36](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/36).
+- Pool Allocation Breakdown bar height increased from 90 px to 180 px for improved readability. Closes [#38](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/38).
+
+### Documentation
+
+- `connecting.md` — new **Remoting Prerequisites** section covering WinRM setup, TrustedHosts configuration with FQDN guidance, firewall ports table, and the node fan-out flow diagram showing how per-node CIM sessions are established and how auth is inherited. Closes [#34](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/34).
+- `getting-started.md` — updated Quick Start to show per-run folder structure, ImportExcel auto-install note, updated examples to reflect `All` as the default format.
+- `reports.md` — updated format examples, ImportExcel dependency note, output folder structure documentation.
+
 ## [1.0.8] — 2026-04-13
 
 ### Fixed

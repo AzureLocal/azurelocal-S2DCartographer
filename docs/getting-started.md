@@ -7,7 +7,7 @@
 | **PowerShell 7.2+** | Required. [Download here](https://github.com/PowerShell/PowerShell) |
 | **Storage / FailoverClusters RSAT** | Required on management machine, or run directly on a cluster node |
 | **WinRM / CIM access** | Required for remote connections. Ports 5985/5986 open to cluster nodes |
-| **ImportExcel** | Required for Excel reports: `Install-Module ImportExcel` |
+| **ImportExcel** | Installed automatically as a module dependency via PSGallery |
 | **Microsoft Edge or Chrome** | Required for PDF output (headless print). Pre-installed on most Windows machines |
 | **Az.KeyVault** | Optional — only needed for Key Vault credential retrieval |
 
@@ -31,13 +31,27 @@ Import-Module .\S2DCartographer.psd1 -Force
 
 ## Quick Start
 
-The fastest path — one command that connects, collects, analyzes, and generates an HTML report:
+The fastest path — one command that connects, collects, analyzes, and generates all reports:
 
 ```powershell
 Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential (Get-Credential)
 ```
 
-Output files are written to `C:\S2DCartographer\` by default. Open the `.html` file in any browser.
+Output files are written to a per-run folder under `C:\S2DCartographer\` by default:
+
+```text
+C:\S2DCartographer\
+  c01-prd-bal\
+    20260413-1430\
+      S2DCartographer_c01-prd-bal_20260413-1430.html
+      S2DCartographer_c01-prd-bal_20260413-1430.docx
+      S2DCartographer_c01-prd-bal_20260413-1430.xlsx
+      S2DCartographer_c01-prd-bal_20260413-1430.pdf
+      S2DCartographer_c01-prd-bal_20260413-1430.log
+      diagrams\        ← when -IncludeDiagrams is used
+```
+
+Each run creates its own timestamped subfolder so multiple clusters and repeated runs never overwrite each other. The `.log` file captures every collection step, duration, warnings, and output paths.
 
 ---
 
@@ -91,13 +105,13 @@ $health | Format-Table CheckName, Severity, Status, Details
 ### 3 — Generate reports
 
 ```powershell
-# HTML dashboard (default)
+# All formats — HTML, Word, PDF, Excel (default)
 $data = Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred -PassThru
-New-S2DReport -InputObject $data -Format Html -OutputDirectory "C:\Reports\"
-
-# All formats — HTML, Word, PDF, Excel
 New-S2DReport -InputObject $data -Format All -Author "Your Name" -Company "Your Company" `
     -OutputDirectory "C:\Reports\"
+
+# Single format only
+New-S2DReport -InputObject $data -Format Html -OutputDirectory "C:\Reports\"
 ```
 
 ### 4 — Generate diagrams
@@ -123,14 +137,14 @@ Disconnect-S2DCluster
 `Invoke-S2DCartographer` runs the entire pipeline automatically:
 
 ```powershell
-# HTML report (default)
+# All formats — HTML, Word, PDF, Excel (default — no -Format needed)
 Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential (Get-Credential)
 
 # All formats + all diagrams
 Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred `
-    -Format All -IncludeDiagrams `
+    -IncludeDiagrams `
     -Author "Kristopher Turner" -Company "TierPoint" `
-    -OutputDirectory "C:\Deliverables\2026-04-11-c01-prd-bal\"
+    -OutputDirectory "C:\Deliverables\"
 
 # Return the data object for further processing
 $data = Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred -PassThru

@@ -91,6 +91,84 @@
 
 ---
 
+## Remoting Prerequisites
+
+Before connecting from a management machine, verify the following:
+
+### WinRM
+
+S2DCartographer uses CIM over WinRM (HTTP port 5985 by default). The cluster nodes must have WinRM enabled and listening:
+
+```powershell
+# Run on each cluster node (or via GPO)
+Enable-PSRemoting -Force
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "*" -Force   # or specific management host IPs
+```
+
+### TrustedHosts (non-domain-joined management machines)
+
+If your management machine is **not** domain-joined, Windows cannot use Kerberos to authenticate the remote host. You must add the cluster FQDN (or a wildcard) to your local TrustedHosts list:
+
+```powershell
+# Run once on your management machine (elevated)
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "*.yourdomain.com" -Force
+
+# Or add specific FQDNs
+$current = (Get-Item WSMan:\localhost\Client\TrustedHosts).Value
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "$current,tplabs-clus01.azrl.mgmt" -Force
+```
+
+!!! tip "Use FQDNs in TrustedHosts"
+    S2DCartographer resolves short cluster names to FQDNs via DNS before connecting. If you configure TrustedHosts with short names (`tplabs-clus01`) but the module resolves to an FQDN (`tplabs-clus01.azrl.mgmt`), the WinRM handshake will fail with `0x8009030e`. Always use FQDNs in TrustedHosts.
+
+    **Resolution order** used by `Connect-S2DCluster`:
+
+    1. TrustedHosts — checks if the short name matches a FQDN entry and promotes it
+    2. DNS (`GetHostEntry`) — resolves short name to FQDN
+    3. Short-name pass-through — last resort
+    4. Precise error with remediation steps if all fail
+
+### Firewall
+
+| Port | Protocol | Direction | Purpose |
+| --- | --- | --- | --- |
+| 5985 | TCP | Inbound on nodes | WinRM HTTP (default) |
+| 5986 | TCP | Inbound on nodes | WinRM HTTPS (optional) |
+
+---
+
+## Node Fan-Out
+
+S2DCartographer connects to the cluster first, then fans out to individual nodes to collect per-disk data. Understanding this flow helps diagnose connection issues:
+
+    Management machine
+      │
+      └─► Cluster VIP / FQDN  (Connect-S2DCluster)
+            │  CIM session → enumerates nodes via MSCluster_Node
+            │
+            ├─► Node 1 FQDN  (Get-S2DPhysicalDiskInventory)
+            ├─► Node 2 FQDN
+            ├─► Node 3 FQDN
+            └─► Node 4 FQDN
+
+**Node FQDNs** are resolved from the short names returned by the cluster API. `Connect-S2DCluster` uses the cluster's DNS suffix to build the FQDN for each node and stores the mapping in the module session. All subsequent per-node CIM sessions use the FQDN targets — not short names — so they match what TrustedHosts expects.
+
+!!! warning "Node fan-out failure after successful cluster connect"
+    If the cluster connects but physical disk collection fails or returns empty results, the node FQDNs are likely not in TrustedHosts. The cluster VIP and the node FQDNs are separate entries — both must be trusted.
+
+    ```powershell
+    # Add both the cluster and all nodes
+    Set-Item WSMan:\localhost\Client\TrustedHosts `
+        -Value "tplabs-clus01.azrl.mgmt,azl-n01.azrl.mgmt,azl-n02.azrl.mgmt,azl-n03.azrl.mgmt,azl-n04.azrl.mgmt" `
+        -Force
+    ```
+
+### Authentication inheritance
+
+All per-node CIM sessions inherit the `Authentication` method and `Credential` from the module session established at connect time. You do not need to pass credentials again for per-node calls — the session state carries them automatically.
+
+---
+
 ## Parameters
 
 | Parameter | Type | Description |

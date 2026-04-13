@@ -120,12 +120,8 @@ Multi-tab `.xlsx` using the [ImportExcel](https://github.com/dfinke/ImportExcel)
 New-S2DReport -InputObject $data -Format Excel -OutputDirectory "C:\Reports\"
 ```
 
-!!! warning "ImportExcel required"
-    Excel output requires the `ImportExcel` module, which is not installed by default. HTML, Word, and PDF have no additional dependencies.
-
-```powershell
-Install-Module ImportExcel -Scope CurrentUser -Force
-```
+!!! note "ImportExcel installed automatically"
+    `ImportExcel` is declared as a required module in the S2DCartographer manifest. When you install S2DCartographer from PSGallery, `ImportExcel` is installed automatically — no manual step required.
 
 ---
 
@@ -143,7 +139,19 @@ Install-Module ImportExcel -Scope CurrentUser -Force
 | `-Author` | `string` | No | Author name embedded in report headers |
 | `-Company` | `string` | No | Company/org name embedded in report headers |
 
-**Output file naming:** `S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.<ext>`
+**Output folder structure:** Each `Invoke-S2DCartographer` run creates a per-run subfolder:
+
+```text
+<OutputDirectory>\<ClusterName>\<yyyyMMdd-HHmm>\
+  S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.html
+  S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.docx
+  S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.xlsx
+  S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.pdf
+  S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.log
+  diagrams\
+```
+
+Multiple clusters and repeated runs never overwrite each other.
 
 ---
 
@@ -152,23 +160,23 @@ Install-Module ImportExcel -Scope CurrentUser -Force
 The orchestrator handles connect → collect → report → disconnect in one call:
 
 ```powershell
-# HTML only
+# All formats — HTML, Word, PDF, Excel (default — no -Format needed)
 Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential (Get-Credential)
 
 # All formats + all diagrams
 Invoke-S2DCartographer -ClusterName "c01-prd-bal" -Credential $cred `
-    -Format All -IncludeDiagrams `
+    -IncludeDiagrams `
     -Author "Your Name" -Company "Your Company" `
-    -OutputDirectory "C:\Reports\2026-04-11-c01-prd-bal\"
+    -OutputDirectory "C:\Reports\"
 
-# Word + PDF customer deliverable
+# Word + PDF only — customer deliverable
 Invoke-S2DCartographer -ClusterName "customer-cluster-01" -Credential $cred `
     -Format Word, Pdf `
     -Author "Kristopher Turner" -Company "Hybrid Cloud Solutions" `
-    -OutputDirectory "C:\Deliverables\Customer\"
+    -OutputDirectory "C:\Deliverables\"
 
-# Key Vault credentials (unattended)
+# Key Vault credentials (unattended) — all formats
 Invoke-S2DCartographer -ClusterName "c01-prd-bal" `
     -KeyVaultName "kv-platform-prod" -SecretName "cluster-admin-password" `
-    -Format Html -OutputDirectory "C:\AutoReports\"
+    -OutputDirectory "C:\AutoReports\"
 ```

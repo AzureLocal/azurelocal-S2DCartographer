@@ -211,7 +211,7 @@ tr:hover{background:#f3f2f1}
 <div class="section">
   <h2>Pool Allocation Breakdown</h2>
   <p style="margin-bottom:12px;font-size:12px;color:var(--muted)">Single bar showing how the raw storage pool is carved up across volumes. The dashed amber line marks the recommended rebuild reserve boundary. Any bar extending past the pool total is overcommit (shown in red).</p>
-  <div style="position:relative;height:90px"><canvas id="poolBreakdownChart"></canvas></div>
+  <div style="position:relative;height:180px"><canvas id="poolBreakdownChart"></canvas></div>
 </div>
 
 <div class="section">
@@ -343,6 +343,7 @@ new Chart(pbCtx, {
   options: {
     responsive: true, maintainAspectRatio: false,
     indexAxis: 'y',
+    layout: { padding: { top: 20, bottom: 4 } },
     plugins: {
       legend: { position: 'bottom', labels: { boxWidth: 14, font: { size: 11 } } },
       tooltip: { callbacks: { label: ctx => ctx.dataset.label } }
