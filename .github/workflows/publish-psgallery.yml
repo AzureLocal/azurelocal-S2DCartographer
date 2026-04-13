@@ -20,6 +20,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install required module dependencies
+        shell: pwsh
+        run: |
+          Install-Module ImportExcel -Force -Scope CurrentUser -MinimumVersion 7.0.0
+
       - name: Validate module manifest
         shell: pwsh
         run: |
