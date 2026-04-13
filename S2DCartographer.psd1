@@ -1,6 +1,6 @@
 @{
     RootModule           = 'S2DCartographer.psm1'
-    ModuleVersion        = '1.1.1'
+    ModuleVersion        = '1.2.0'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
     Author               = 'Azure Local Cloud'
@@ -50,6 +50,26 @@
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-s2d-cartographer/main/docs/assets/images/s2dcartographer-icon.svg'
             ReleaseNotes = @'
+## v1.2.0 — Structured data export (JSON/CSV), pool-member filtering, Surveyor cross-link
+
+### Added
+- **JSON snapshot export** — every run now writes a structured `S2DClusterData` snapshot as `<base>.json` alongside the existing reports. Stable schema (SchemaVersion 1.0) documented in `docs/schema/cluster-snapshot.md` with a canonical sample at `samples/cluster-snapshot.json`. Enables downstream tools, diffing, what-if calculations, custom scripts. Closes #40.
+- **CSV export** — opt-in flat per-collector tables (`-physical-disks.csv`, `-volumes.csv`, `-health-checks.csv`, `-waterfall.csv`) for spreadsheet / Power BI consumers. Request with `-Format Csv`. Closes #40.
+- `IsPoolMember` boolean on every disk returned by `Get-S2DPhysicalDiskInventory` — lets downstream tooling distinguish S2D pool members from boot drives and SAN-presented LUNs. Closes #41.
+- `-IncludeNonPoolDisks` switch on `Invoke-S2DCartographer` and `New-S2DReport` to override the default filter and show every visible disk. Closes #41.
+
+### Changed
+- Physical Disk Inventory tables in HTML, Word, PDF, and Excel reports now show **pool-member disks only** by default. Boot drives and SAN-presented LUNs are filtered because they are not S2D scope and their presence misleads readers of the capacity report. JSON and CSV outputs are unaffected — they always include every disk with an `IsPoolMember` flag for full downstream fidelity. Closes #41.
+- `DiskSymmetry`, `DiskHealth`, `NVMeWear`, `FirmwareConsistency`, and `RebuildCapacity` health checks now operate only on pool-member disks. Previously a single asymmetric boot drive could trip the symmetry check; now only actual S2D pool disk counts are compared. Closes #41.
+- `Invoke-S2DCartographer -Format All` now includes `Json` in the expansion (HTML + Word + PDF + Excel + JSON).
+
+### Documentation
+- Cross-link to Azure Local Surveyor added in README, `docs/index.md`, and the MkDocs Related Projects nav. Closes #35.
+- `docs/schema/cluster-snapshot.md` — new file fully documenting the JSON export schema.
+- `docs/collectors/physical-disks.md` — new Pool Membership Filter section explaining `IsPoolMember` and the default report filtering behaviour.
+- `docs/reports.md` — new JSON Snapshot and CSV Tables sections; format table updated.
+- `docs/getting-started.md` — per-run folder listing updated to include the JSON file.
+
 ## v1.1.1 — Fix Key Vault and Authentication paths in Invoke-S2DCartographer
 
 ### Fixed

@@ -479,6 +479,7 @@ function Get-S2DPhysicalDiskInventory {
             Role              = $role
             Usage             = $disk.Usage
             CanPool           = $disk.CanPool
+            IsPoolMember      = $inPool
             HealthStatus      = $disk.HealthStatus
             OperationalStatus = $disk.OperationalStatus
             PhysicalLocation  = $disk.PhysicalLocation
@@ -496,13 +497,17 @@ function Get-S2DPhysicalDiskInventory {
     }
 
     # Surface inventory anomalies directly in the collector output path.
+    # Symmetry is evaluated against pool-member disks only — boot drives (BOSS)
+    # and SAN-presented LUNs visible to some nodes but not others would otherwise
+    # produce false-positive asymmetry warnings.
     if ($result) {
-        $byNode = $result | Group-Object NodeName
+        $poolMembers = @($result | Where-Object IsPoolMember -eq $true)
+        $byNode = $poolMembers | Group-Object NodeName
         if ($byNode.Count -gt 1) {
             $counts = $byNode | Select-Object Name, Count
             $uniqueCounts = @($counts | Select-Object -ExpandProperty Count | Select-Object -Unique)
             if ($uniqueCounts.Count -gt 1) {
-                Write-Warning "Disk symmetry anomaly detected: $(($counts | ForEach-Object { "$($_.Name)=$($_.Count)" }) -join ', ')"
+                Write-Warning "Pool-member disk symmetry anomaly detected: $(($counts | ForEach-Object { "$($_.Name)=$($_.Count)" }) -join ', ')"
             }
         }
 

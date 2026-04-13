@@ -5,7 +5,8 @@ function Export-S2DHtmlReport {
         [Parameter(Mandatory)] [S2DClusterData] $ClusterData,
         [Parameter(Mandatory)] [string]          $OutputPath,
         [string] $Author  = '',
-        [string] $Company = ''
+        [string] $Company = '',
+        [switch] $IncludeNonPoolDisks
     )
 
     $generatedAt = Get-Date -Format 'yyyy-MM-dd HH:mm'
@@ -16,7 +17,11 @@ function Export-S2DHtmlReport {
     $hc   = @($ClusterData.HealthChecks)
     $oh   = $ClusterData.OverallHealth
     $vols = @($ClusterData.Volumes)
-    $disks = @($ClusterData.PhysicalDisks)
+    # Physical Disk Inventory shows pool members only by default. Boot drives
+    # (BOSS) and SAN-presented LUNs are not in S2D scope — their presence in
+    # the report misleads the reader into thinking they are pool capacity.
+    $allDisks = @($ClusterData.PhysicalDisks)
+    $disks = if ($IncludeNonPoolDisks) { $allDisks } else { @($allDisks | Where-Object { $_.IsPoolMember -ne $false }) }
     $cache = $ClusterData.CacheTier
 
     $overallBg = switch ($oh) { 'Healthy'{'#dff6dd'} 'Warning'{'#fff4ce'} 'Critical'{'#fde7e9'} default{'#f3f2f1'} }

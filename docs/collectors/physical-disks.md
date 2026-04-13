@@ -38,6 +38,7 @@ Returns `PSCustomObject[]` — one object per physical disk.
 | `Role` | `string` | `Cache`, `Capacity`, or `Unknown` |
 | `Usage` | `string` | S2D usage classification: `Auto-Select`, `Journal`, `Retired` |
 | `CanPool` | `bool` | Whether the disk is eligible for pooling |
+| `IsPoolMember` | `bool` | Whether this disk is currently a member of the S2D storage pool. **Use this to filter out boot drives (BOSS) and SAN-presented LUNs that happen to be visible to the node.** |
 | `HealthStatus` | `string` | `Healthy`, `Warning`, or `Unhealthy` |
 | `OperationalStatus` | `string` | Operational state from WMI |
 | `PhysicalLocation` | `string` | Physical bay/slot location string (when available) |
@@ -51,6 +52,26 @@ Returns `PSCustomObject[]` — one object per physical disk.
 | `WriteErrors` | `int64` | Uncorrected write errors |
 | `ReadLatency` | `int64` | Average read latency (when available) |
 | `WriteLatency` | `int64` | Average write latency (when available) |
+
+---
+
+## Pool Membership Filter
+
+`Get-S2DPhysicalDiskInventory` returns **every** disk visible to every node — boot drives (Dell BOSS, HPE SmartArray M.2, etc.), SAN-presented LUNs, and anything else Windows can see. This is intentional: the collector gives downstream consumers full fidelity, and the JSON / CSV exports always preserve every disk.
+
+The rendered reports (HTML, Word, PDF, Excel Physical Disk Inventory table) **filter to pool members only by default**. The filter is driven by the `IsPoolMember` boolean on each disk:
+
+- `IsPoolMember = $true` — disk is a member of the S2D storage pool. Included.
+- `IsPoolMember = $false` — disk is visible to the node but not a pool member (boot drive, SAN LUN, spare). Excluded from the rendered table.
+
+To include non-pool disks in rendered reports:
+
+```powershell
+Invoke-S2DCartographer -ClusterName <name> -IncludeNonPoolDisks
+New-S2DReport -InputObject $data -Format All -IncludeNonPoolDisks
+```
+
+Health checks (`DiskSymmetry`, `DiskHealth`, `NVMeWear`, `FirmwareConsistency`, `RebuildCapacity`) always operate on pool members only, regardless of this switch — non-pool disks are not in S2D scope.
 
 ---
 

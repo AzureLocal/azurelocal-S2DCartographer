@@ -5,7 +5,8 @@ function Export-S2DPdfReport {
         [Parameter(Mandatory)] [S2DClusterData] $ClusterData,
         [Parameter(Mandatory)] [string]          $OutputPath,
         [string] $Author  = '',
-        [string] $Company = ''
+        [string] $Company = '',
+        [switch] $IncludeNonPoolDisks
     )
 
     $dir = Split-Path $OutputPath -Parent
@@ -13,7 +14,14 @@ function Export-S2DPdfReport {
 
     # ── Generate intermediate HTML ────────────────────────────────────────────
     $htmlPath = [System.IO.Path]::ChangeExtension($OutputPath, '.pdf.html')
-    Export-S2DHtmlReport -ClusterData $ClusterData -OutputPath $htmlPath -Author $Author -Company $Company | Out-Null
+    $htmlParams = @{
+        ClusterData = $ClusterData
+        OutputPath  = $htmlPath
+        Author      = $Author
+        Company     = $Company
+    }
+    if ($IncludeNonPoolDisks) { $htmlParams['IncludeNonPoolDisks'] = $true }
+    Export-S2DHtmlReport @htmlParams | Out-Null
 
     # ── Locate headless browser ───────────────────────────────────────────────
     $browserPaths = @(

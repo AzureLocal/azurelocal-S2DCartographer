@@ -5,7 +5,8 @@ function Export-S2DWordReport {
         [Parameter(Mandatory)] [S2DClusterData] $ClusterData,
         [Parameter(Mandatory)] [string]          $OutputPath,
         [string] $Author  = '',
-        [string] $Company = ''
+        [string] $Company = '',
+        [switch] $IncludeNonPoolDisks
     )
 
     $dir = Split-Path $OutputPath -Parent
@@ -16,7 +17,8 @@ function Export-S2DWordReport {
     $wf   = $ClusterData.CapacityWaterfall
     $pool = $ClusterData.StoragePool
     $vols = @($ClusterData.Volumes)
-    $disks = @($ClusterData.PhysicalDisks)
+    $allDisks = @($ClusterData.PhysicalDisks)
+    $disks = if ($IncludeNonPoolDisks) { $allDisks } else { @($allDisks | Where-Object { $_.IsPoolMember -ne $false }) }
     $hc   = @($ClusterData.HealthChecks)
     $oh   = $ClusterData.OverallHealth
     $date = Get-Date -Format 'MMMM d, yyyy'

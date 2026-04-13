@@ -285,7 +285,7 @@ if (-not (Test-Path $OutputDirectory)) {
     New-Item -Path $OutputDirectory -ItemType Directory -Force | Out-Null
 }
 
-$reportPath = $clusterData | New-S2DReport -Format Html -OutputDirectory $OutputDirectory `
+$reportPath = $clusterData | New-S2DReport -Format All, Csv -OutputDirectory $OutputDirectory `
     -Author 'MAPROOM simulation' -Company 'Infinite Improbability Corp'
 
 Write-Host ''

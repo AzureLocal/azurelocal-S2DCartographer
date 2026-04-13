@@ -14,6 +14,8 @@ Documentation: [azurelocal.cloud](https://azurelocal.cloud) | Solutions: [Azure 
 
 S2DCartographer connects to a live Azure Local or Windows Server cluster, inventories every layer of the Storage Spaces Direct stack, and produces publication-quality capacity analysis, health assessments, and visual diagrams. It answers the questions every S2D administrator actually has: *How much usable space do I really have? Is my reserve adequate? Am I overcommitted?*
 
+> **Planning a new cluster?** Use [Azure Local Surveyor](https://azurelocal.github.io/azurelocal-surveyor) to model capacity, compute, and workloads *before* you deploy. Then run S2DCartographer on the running cluster to validate what was actually built. Surveyor plans; Cartographer verifies.
+
 ---
 
 ## The Problem

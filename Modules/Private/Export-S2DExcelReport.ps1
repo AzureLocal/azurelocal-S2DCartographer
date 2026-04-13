@@ -5,7 +5,8 @@ function Export-S2DExcelReport {
         [Parameter(Mandatory)] [S2DClusterData] $ClusterData,
         [Parameter(Mandatory)] [string]          $OutputPath,
         [string] $Author  = '',
-        [string] $Company = ''
+        [string] $Company = '',
+        [switch] $IncludeNonPoolDisks
     )
 
     if (-not (Get-Module -ListAvailable -Name ImportExcel -ErrorAction SilentlyContinue)) {
@@ -20,7 +21,8 @@ function Export-S2DExcelReport {
     $wf    = $ClusterData.CapacityWaterfall
     $pool  = $ClusterData.StoragePool
     $vols  = @($ClusterData.Volumes)
-    $disks = @($ClusterData.PhysicalDisks)
+    $allDisks = @($ClusterData.PhysicalDisks)
+    $disks = if ($IncludeNonPoolDisks) { $allDisks } else { @($allDisks | Where-Object { $_.IsPoolMember -ne $false }) }
     $hc    = @($ClusterData.HealthChecks)
 
     # ── Tab 1: Summary ────────────────────────────────────────────────────────

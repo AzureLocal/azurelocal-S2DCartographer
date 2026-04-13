@@ -8,6 +8,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-04-13
+
+### Added
+
+- **JSON snapshot export** — every run writes a structured `S2DClusterData` snapshot as `<base>.json` alongside the existing reports. Stable schema at SchemaVersion 1.0, documented in `docs/schema/cluster-snapshot.md` with a canonical sample at `samples/cluster-snapshot.json`. Enables downstream tools, diff workflows, what-if calculations, external dashboards, custom scripts. Closes [#40](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/40).
+- **CSV export** — opt-in flat per-collector tables (`-physical-disks.csv`, `-volumes.csv`, `-health-checks.csv`, `-waterfall.csv`) for spreadsheet / Power BI consumers. Request with `-Format Csv`. Closes [#40](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/40).
+- `IsPoolMember` boolean on every disk returned by `Get-S2DPhysicalDiskInventory`. Lets downstream tooling distinguish S2D pool members from boot drives and SAN-presented LUNs. Closes [#41](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/41).
+- `-IncludeNonPoolDisks` switch on `Invoke-S2DCartographer` and `New-S2DReport` for when you explicitly want every disk in the rendered report, not just pool members. Closes [#41](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/41).
+
+### Changed
+
+- Physical Disk Inventory tables in HTML, Word, PDF, and Excel reports now show **pool-member disks only** by default. Boot drives (Dell BOSS, HPE M.2 SmartArray) and SAN-presented LUNs are filtered because they are not S2D scope and their presence in the table misleads readers. JSON and CSV exports always include every disk with an `IsPoolMember` flag. Closes [#41](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/41).
+- `DiskSymmetry`, `DiskHealth`, `NVMeWear`, `FirmwareConsistency`, and `RebuildCapacity` health checks now operate only on pool-member disks. Previously a single asymmetric boot drive could trip the symmetry check; now only actual S2D pool disk counts are compared, eliminating false positives on heterogeneous hardware. Closes [#41](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/41).
+- `Invoke-S2DCartographer -Format All` now includes `Json` in the expansion (HTML + Word + PDF + Excel + JSON). CSV remains opt-in because it produces multiple files per run.
+
+### Documentation
+
+- Cross-link to Azure Local Surveyor added in README, `docs/index.md`, and the MkDocs "Related Projects" nav entry. Surveyor plans; Cartographer verifies. Closes [#35](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/35).
+- `docs/schema/cluster-snapshot.md` — new page documenting every field of the JSON export, including `S2DCapacity` shape, PowerShell / jq / Python consumption examples, and schema versioning policy.
+- `docs/collectors/physical-disks.md` — new Pool Membership Filter section; new `IsPoolMember` property row in the output field table.
+- `docs/reports.md` — new JSON Snapshot and CSV Tables sections; Formats table updated; `-IncludeNonPoolDisks` documented in the parameter table; per-run folder listing updated to include the `.json` file.
+- `docs/getting-started.md` — per-run folder listing updated to include the JSON file.
+- `samples/cluster-snapshot.json` — canonical JSON sample committed, generated from the MAPROOM IIC fixture. Closes [#42](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/42).
+
 ## [1.1.1] — 2026-04-13
 
 ### Fixed

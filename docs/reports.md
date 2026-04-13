@@ -1,6 +1,6 @@
 # Reports
 
-S2DCartographer generates publication-quality reports from collected cluster data. All formats show TiB and TB side-by-side throughout.
+S2DCartographer generates publication-quality reports and structured data exports from collected cluster data. All human-readable formats show TiB and TB side-by-side throughout. Structured formats (JSON, CSV) carry both unit representations on every size field so downstream tools never need to convert.
 
 ## Formats
 
@@ -10,7 +10,9 @@ S2DCartographer generates publication-quality reports from collected cluster dat
 | **Word** | `.docx` | Customer deliverables, architecture review documents |
 | **PDF** | `.pdf` | Archivable, printable, universally readable |
 | **Excel** | `.xlsx` | Data analysis, capacity tracking over time |
-| **All** | — | Generates all four formats in one call |
+| **JSON** | `.json` | Structured snapshot of the full S2DClusterData object for downstream tools, diffs, external dashboards. Schema documented in [Cluster Snapshot Schema](schema/cluster-snapshot.md) |
+| **CSV** | `.csv` (4 files) | Flat per-collector tables: physical disks, volumes, health checks, waterfall. For spreadsheet / Power BI consumers |
+| **All** | — | Generates HTML + Word + PDF + Excel + JSON in one call (CSV is opt-in and must be requested explicitly) |
 
 ---
 
@@ -125,6 +127,77 @@ New-S2DReport -InputObject $data -Format Excel -OutputDirectory "C:\Reports\"
 
 ---
 
+## JSON Snapshot
+
+Structured data export of the full `S2DClusterData` object. Intended for downstream tools (historical diff, what-if scenarios, external dashboards, custom scripts). Included by default when `-Format All` is used.
+
+**File name:** `S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.json`
+
+**Shape:**
+
+```json
+{
+  "SchemaVersion": "1.0",
+  "Generated":     { "Timestamp": "...", "ModuleVersion": "...", ... },
+  "Cluster":       { "Name": "...", "Fqdn": "...", "NodeCount": 4, "Nodes": [...], ... },
+  "OverallHealth": "Warning",
+  "PhysicalDisks": [ { ... } ],
+  "StoragePool":   { ... },
+  "Volumes":       [ { ... } ],
+  "CacheTier":     { ... },
+  "CapacityWaterfall": { ... },
+  "HealthChecks":  [ { ... } ]
+}
+```
+
+**Full schema:** [Cluster Snapshot Schema](schema/cluster-snapshot.md).
+
+**Canonical sample:** [`samples/cluster-snapshot.json`](https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/samples/cluster-snapshot.json).
+
+**Consuming from PowerShell:**
+
+```powershell
+$snap = Get-Content .\S2DCartographer_*.json -Raw | ConvertFrom-Json
+$snap.PhysicalDisks | Where-Object IsPoolMember | Measure-Object -Property SizeBytes -Sum
+$snap.HealthChecks  | Where-Object Status -ne 'Pass'
+```
+
+**Consuming from jq:**
+
+```bash
+jq '.CapacityWaterfall.UsableCapacity.TiB' snapshot.json
+jq '.HealthChecks[] | select(.Status != "Pass")' snapshot.json
+```
+
+!!! note "JSON always contains every disk"
+    The JSON export includes every disk visible to every node — boot drives and SAN-presented LUNs too — each tagged with an `IsPoolMember` boolean. This is by design: downstream tools get full fidelity. The Physical Disk Inventory in HTML / Word / PDF / Excel reports filters to pool members only by default.
+
+---
+
+## CSV Tables
+
+Flat per-collector tables for spreadsheet / Power BI consumers. Opt-in via `-Format Csv` (not included in `-Format All`).
+
+**Files produced:**
+
+| File suffix | Content |
+| --- | --- |
+| `-physical-disks.csv` | One row per disk including `IsPoolMember` column |
+| `-volumes.csv` | One row per volume |
+| `-health-checks.csv` | One row per health check |
+| `-waterfall.csv` | One row per waterfall stage |
+
+**Generate:**
+
+```powershell
+New-S2DReport -InputObject $data -Format Csv -OutputDirectory "C:\Reports\"
+
+# Or combine with All
+New-S2DReport -InputObject $data -Format All, Csv -OutputDirectory "C:\Reports\"
+```
+
+---
+
 ## Using `New-S2DReport` directly
 
 `New-S2DReport` requires an `S2DClusterData` object. Obtain one with `-PassThru` on `Invoke-S2DCartographer`, or by building the pipeline manually.
@@ -134,10 +207,11 @@ New-S2DReport -InputObject $data -Format Excel -OutputDirectory "C:\Reports\"
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `-InputObject` | `S2DClusterData` | Yes | Cluster data object (also accepts pipeline) |
-| `-Format` | `string[]` | Yes | Html, Word, Pdf, Excel, or All |
+| `-Format` | `string[]` | Yes | `Html`, `Word`, `Pdf`, `Excel`, `Json`, `Csv`, or `All` |
 | `-OutputDirectory` | `string` | No | Destination folder (default: `C:\S2DCartographer`) |
 | `-Author` | `string` | No | Author name embedded in report headers |
 | `-Company` | `string` | No | Company/org name embedded in report headers |
+| `-IncludeNonPoolDisks` | `switch` | No | Include boot drives and SAN-presented LUNs in the Physical Disk Inventory table. Default is to show pool members only. Does not affect JSON or CSV outputs, which always include every disk |
 
 **Output folder structure:** Each `Invoke-S2DCartographer` run creates a per-run subfolder:
 
@@ -147,6 +221,8 @@ New-S2DReport -InputObject $data -Format Excel -OutputDirectory "C:\Reports\"
   S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.docx
   S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.xlsx
   S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.pdf
+  S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.json
+  S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.log
   S2DCartographer_<ClusterName>_<yyyyMMdd-HHmm>.log
   diagrams\
 ```

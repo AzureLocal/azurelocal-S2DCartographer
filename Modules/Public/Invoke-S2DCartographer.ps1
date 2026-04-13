@@ -52,8 +52,14 @@ function Invoke-S2DCartographer {
         Defaults to C:\S2DCartographer.
 
     .PARAMETER Format
-        Report formats to generate: Html, Word, Pdf, Excel, All.
-        Defaults to All (HTML, Word, PDF, Excel).
+        Report formats to generate: Html, Word, Pdf, Excel, Json, Csv, All.
+        Defaults to All (= HTML + Word + PDF + Excel + JSON). CSV is opt-in
+        because it produces multiple files per run.
+
+    .PARAMETER IncludeNonPoolDisks
+        Include non-pool disks (boot drives, SAN LUNs) in the Physical Disk Inventory
+        tables. Default is to show pool members only. JSON and CSV outputs always
+        include every disk with an IsPoolMember flag regardless of this switch.
 
     .PARAMETER IncludeDiagrams
         Also generate all six SVG diagram types.
@@ -115,8 +121,11 @@ function Invoke-S2DCartographer {
         [string] $OutputDirectory = 'C:\S2DCartographer',
 
         [Parameter()]
-        [ValidateSet('Html', 'Word', 'Pdf', 'Excel', 'All')]
+        [ValidateSet('Html', 'Word', 'Pdf', 'Excel', 'Json', 'Csv', 'All')]
         [string[]] $Format = @('All'),
+
+        [Parameter()]
+        [switch] $IncludeNonPoolDisks,
 
         [Parameter()]
         [switch] $IncludeDiagrams,
@@ -284,6 +293,7 @@ function Invoke-S2DCartographer {
                 Author          = $Author
                 Company         = $Company
             }
+            if ($IncludeNonPoolDisks) { $reportParams['IncludeNonPoolDisks'] = $true }
             $generated = @(New-S2DReport @reportParams)
             $outputFiles += $generated
             foreach ($f in $generated) { Write-Log "  Report: $f" }

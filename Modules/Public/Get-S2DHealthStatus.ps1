@@ -90,7 +90,10 @@ function Get-S2DHealthStatus {
     $checks += $check1
 
     # ── Check 2: Disk symmetry ────────────────────────────────────────────────
-    $byNode = @($physDisks | Group-Object NodeName)
+    # Only pool members count — boot drives (BOSS) and SAN-presented LUNs visible
+    # to some nodes but not others are expected asymmetry and not S2D concerns.
+    $poolMemberDisks = @($physDisks | Where-Object { $_.IsPoolMember -eq $true })
+    $byNode = @($poolMemberDisks | Group-Object NodeName)
     $diskSymmetryOk = $true
     $symmetryDetail = ''
     if ($byNode.Count -gt 1) {
@@ -98,17 +101,17 @@ function Get-S2DHealthStatus {
         $uniqueCounts = @($counts | Select-Object -ExpandProperty Count | Select-Object -Unique)
         if ($uniqueCounts.Count -gt 1) {
             $diskSymmetryOk = $false
-            $symmetryDetail = ($counts | ForEach-Object { "$($_.Name)=$($_.Count) disks" }) -join ', '
+            $symmetryDetail = ($counts | ForEach-Object { "$($_.Name)=$($_.Count) pool disks" }) -join ', '
         }
     }
     $check2 = if ($diskSymmetryOk) {
         New-HealthCheck 'DiskSymmetry' 'Warning' 'Pass' `
-            "All nodes have a consistent disk count ($($byNode | Select-Object -First 1 -ExpandProperty Count) disks per node)." `
+            "All nodes have a consistent pool-member disk count ($($byNode | Select-Object -First 1 -ExpandProperty Count) disks per node)." `
             "No action required."
     } else {
         New-HealthCheck 'DiskSymmetry' 'Warning' 'Warn' `
-            "Disk count is inconsistent across nodes: $symmetryDetail" `
-            "Investigate missing or additional disks. S2D requires symmetric disk configurations across nodes."
+            "Pool-member disk count is inconsistent across nodes: $symmetryDetail" `
+            "Investigate missing or additional disks. S2D requires symmetric pool-member disk configurations across nodes."
     }
     $checks += $check2
 
@@ -130,21 +133,24 @@ function Get-S2DHealthStatus {
     $checks += $check3
 
     # ── Check 4: Disk health ──────────────────────────────────────────────────
-    $unhealthyDisks = @($physDisks | Where-Object { $_.HealthStatus -ne 'Healthy' })
+    # Scoped to pool-member disks. A failing BOSS / boot drive is a real
+    # operational concern but it is outside S2D — not the subject of this tool.
+    $unhealthyDisks = @($poolMemberDisks | Where-Object { $_.HealthStatus -ne 'Healthy' })
     $check4 = if ($unhealthyDisks.Count -eq 0) {
         New-HealthCheck 'DiskHealth' 'Critical' 'Pass' `
-            "All $($physDisks.Count) physical disk(s) are healthy." `
+            "All $($poolMemberDisks.Count) pool-member disk(s) are healthy." `
             "No action required."
     } else {
         $labels = ($unhealthyDisks | ForEach-Object { "$($_.NodeName)/$($_.FriendlyName) [$($_.HealthStatus)]" }) -join ', '
         New-HealthCheck 'DiskHealth' 'Critical' 'Fail' `
-            "Non-healthy disk(s) detected: $labels" `
+            "Non-healthy pool-member disk(s) detected: $labels" `
             "Replace failed or degraded disks promptly. Check Get-PhysicalDisk -HasMediaFailure."
     }
     $checks += $check4
 
     # ── Check 5: NVMe wear ────────────────────────────────────────────────────
-    $wornDisks = @($physDisks | Where-Object {
+    # Pool members only — wear on a SAN LUN or a BOSS boot drive is not in scope.
+    $wornDisks = @($poolMemberDisks | Where-Object {
         $_.MediaType -eq 'NVMe' -and $null -ne $_.WearPercentage -and $_.WearPercentage -gt 80
     })
     $check5 = if ($wornDisks.Count -eq 0) {
@@ -173,9 +179,11 @@ function Get-S2DHealthStatus {
     $checks += $check6
 
     # ── Check 7: Firmware consistency ─────────────────────────────────────────
+    # Pool members only — firmware consistency across BOSS and SAN LUNs is not
+    # relevant to S2D correctness.
     $firmwareInconsistent = $false
     $firmwareDetail = ''
-    $byModel = $physDisks | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Model) } | Group-Object Model
+    $byModel = $poolMemberDisks | Where-Object { -not [string]::IsNullOrWhiteSpace($_.Model) } | Group-Object Model
     foreach ($modelGroup in $byModel) {
         $fwVersions = @($modelGroup.Group | Select-Object -ExpandProperty FirmwareVersion | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
         if ($fwVersions.Count -gt 1) {
@@ -201,8 +209,10 @@ function Get-S2DHealthStatus {
     $rebuildDetail = ''
     if ($pool -and $pool.RemainingSize -and $pool.AllocatedSize) {
         $freeBytes  = $pool.RemainingSize.Bytes
+        # Rebuild capacity math is pool-only — non-pool disks are never rebuilt
+        # into the S2D pool if their node fails.
         $largestNodeDiskBytes = [int64](
-            @($physDisks | Group-Object NodeName) |
+            @($poolMemberDisks | Group-Object NodeName) |
             ForEach-Object { ($_.Group | Measure-Object -Property SizeBytes -Sum).Sum } |
             Measure-Object -Maximum
         ).Maximum

@@ -4,11 +4,14 @@
 
 Welcome to **S2DCartographer** — the Storage Spaces Direct analysis, visualization, and reporting tool for Azure Local and Windows Server clusters.
 
+!!! tip "Planning a new cluster?"
+    Use **[Azure Local Surveyor](https://azurelocal.github.io/azurelocal-surveyor)** to model capacity, compute, and workloads *before* you deploy. Run S2DCartographer on the running cluster to validate what was actually built. **Surveyor plans; Cartographer verifies.**
+
 ---
 
 ## What Is This?
 
-S2DCartographer scans a live cluster and maps your entire S2D storage stack — from raw physical disks through the resiliency layers all the way down to actual usable VM capacity. It renders what you find into publication-quality HTML, Word, PDF, and Excel reports, with SVG diagrams for every stage.
+S2DCartographer scans a live cluster and maps your entire S2D storage stack — from raw physical disks through the resiliency layers all the way down to actual usable VM capacity. It renders what you find into publication-quality HTML, Word, PDF, and Excel reports, SVG diagrams for every stage, and a structured JSON snapshot for downstream tooling.
 
 ---
 
@@ -21,6 +24,7 @@ S2DCartographer scans a live cluster and maps your entire S2D storage stack — 
 | **Reserve validation** | Live comparison of actual vs. recommended reserve space |
 | **Health assessments** | 10 pass/fail checks with remediation guidance |
 | **Reports** | HTML, Word, PDF, Excel — ready for customer deliverables |
+| **Data export** | JSON snapshot + per-collector CSVs for downstream tooling |
 | **Diagrams** | SVG waterfall, disk-node map, pool layout, resiliency views |
 
 ---

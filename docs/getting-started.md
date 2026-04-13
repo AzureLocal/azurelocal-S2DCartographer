@@ -47,11 +47,12 @@ C:\S2DCartographer\
       S2DCartographer_c01-prd-bal_20260413-1430.docx
       S2DCartographer_c01-prd-bal_20260413-1430.xlsx
       S2DCartographer_c01-prd-bal_20260413-1430.pdf
+      S2DCartographer_c01-prd-bal_20260413-1430.json
       S2DCartographer_c01-prd-bal_20260413-1430.log
       diagrams\        ← when -IncludeDiagrams is used
 ```
 
-Each run creates its own timestamped subfolder so multiple clusters and repeated runs never overwrite each other. The `.log` file captures every collection step, duration, warnings, and output paths.
+Each run creates its own timestamped subfolder so multiple clusters and repeated runs never overwrite each other. The `.log` file captures every collection step, duration, warnings, and output paths. The `.json` file is a structured snapshot of all collected data — see [Cluster Snapshot Schema](schema/cluster-snapshot.md) for consumption details.
 
 ---
 
