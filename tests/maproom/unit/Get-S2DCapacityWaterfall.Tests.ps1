@@ -8,14 +8,15 @@ Describe 'Get-S2DCapacityWaterfall' {
 
     BeforeEach {
         InModuleScope S2DCartographer {
-            # IIC 4-node, 4× 3.84TB NVMe per node — all capacity disks
+            # IIC 4-node, 4× 3.84TB NVMe per node — all capacity disks, all pool members
             $physDisks = @(foreach ($node in 1..4) {
                 foreach ($disk in 1..4) {
                     [PSCustomObject]@{
-                        NodeName  = "azl-iic-n0$node"
-                        Role      = 'Capacity'
-                        Usage     = 'Auto-Select'
-                        SizeBytes = [int64]3840000000000
+                        NodeName     = "azl-iic-n0$node"
+                        Role         = 'Capacity'
+                        Usage        = 'Auto-Select'
+                        SizeBytes    = [int64]3840000000000
+                        IsPoolMember = $true
                     }
                 }
             })
@@ -30,28 +31,26 @@ Describe 'Get-S2DCapacityWaterfall' {
             $pool.AllocatedSize  = [S2DCapacity]::new($poolAlloc)
             $pool.RemainingSize  = [S2DCapacity]::new($poolFree)
             $pool.OvercommitRatio = 0.10
+            # No ResiliencySettings → waterfall defaults to 3-way mirror (factor 3.0)
 
-            # 1 infra + 2 workload volumes
+            # 1 infra + 2 workload volumes (used only for infra footprint in Stage 5)
             $iv = [S2DVolume]::new()
             $iv.FriendlyName           = 'Infrastructure_aabbccddeeff'
             $iv.IsInfrastructureVolume = $true
             $iv.Size                   = [S2DCapacity]::new([int64]524288000000)    # 512 GiB
             $iv.FootprintOnPool        = [S2DCapacity]::new([int64]1572864000000)   # 1.5 TiB 3-way footprint
-            $iv.EfficiencyPercent      = 33.3
 
             $wv1 = [S2DVolume]::new()
             $wv1.FriendlyName           = 'UserStorage_1'
             $wv1.IsInfrastructureVolume = $false
-            $wv1.Size                   = [S2DCapacity]::new([int64]3000000000000)  # 3 TB
-            $wv1.FootprintOnPool        = [S2DCapacity]::new([int64]9000000000000)  # 9 TB (3-way)
-            $wv1.EfficiencyPercent      = 33.3
+            $wv1.Size                   = [S2DCapacity]::new([int64]3000000000000)
+            $wv1.FootprintOnPool        = [S2DCapacity]::new([int64]9000000000000)
 
             $wv2 = [S2DVolume]::new()
             $wv2.FriendlyName           = 'UserStorage_2'
             $wv2.IsInfrastructureVolume = $false
             $wv2.Size                   = [S2DCapacity]::new([int64]3000000000000)
             $wv2.FootprintOnPool        = [S2DCapacity]::new([int64]9000000000000)
-            $wv2.EfficiencyPercent      = 33.3
 
             $Script:S2DSession = @{
                 ClusterName   = 'azlocal-iic-s2d-01'
@@ -119,10 +118,30 @@ Describe 'Get-S2DCapacityWaterfall' {
     }
 
     Context 'Stage calculations' {
-        It 'Stage 1 (Raw Physical) equals sum of all capacity disk bytes' {
+        It 'Stage 1 (Raw Physical) equals sum of pool-member capacity disk bytes' {
             InModuleScope S2DCartographer {
                 $expected = [int64](16 * 3840000000000)   # 16 disks × 3.84 TB
                 (Get-S2DCapacityWaterfall).Stages[0].Size.Bytes | Should -Be $expected
+            }
+        }
+
+        It 'Stage 1 excludes non-pool-member disks' {
+            InModuleScope S2DCartographer {
+                # Add 2 non-pool disks (BOSS boot drives) — should not affect Stage 1
+                $extraDisks = @(
+                    [PSCustomObject]@{ NodeName='azl-iic-n01'; Role='Capacity'; Usage='Auto-Select'; SizeBytes=[int64]240000000000; IsPoolMember=$false },
+                    [PSCustomObject]@{ NodeName='azl-iic-n02'; Role='Capacity'; Usage='Auto-Select'; SizeBytes=[int64]240000000000; IsPoolMember=$false }
+                )
+                $Script:S2DSession.CollectedData['PhysicalDisks'] = @($Script:S2DSession.CollectedData['PhysicalDisks']) + $extraDisks
+                $expected = [int64](16 * 3840000000000)
+                (Get-S2DCapacityWaterfall).Stages[0].Size.Bytes | Should -Be $expected
+            }
+        }
+
+        It 'Stage 2 (Vendor Label) has the same bytes as Stage 1' {
+            InModuleScope S2DCartographer {
+                $result = Get-S2DCapacityWaterfall
+                $result.Stages[1].Size.Bytes | Should -Be $result.Stages[0].Size.Bytes
             }
         }
 
@@ -141,10 +160,57 @@ Describe 'Get-S2DCapacityWaterfall' {
             }
         }
 
-        It 'Stage 8 (Final Usable) equals sum of workload volume sizes' {
+        It 'Stage 7 (After Resiliency) equals Stage 6 divided by resiliency factor (default 3.0)' {
             InModuleScope S2DCartographer {
-                $expected = [int64](2 * 3000000000000)   # 2 workload volumes × 3 TB
-                (Get-S2DCapacityWaterfall).Stages[7].Size.Bytes | Should -Be $expected
+                $result   = Get-S2DCapacityWaterfall
+                $stage6   = $result.Stages[5].Size.Bytes
+                $expected = [int64]($stage6 / 3.0)
+                $result.Stages[6].Size.Bytes | Should -Be $expected
+            }
+        }
+
+        It 'Stage 8 (Final Usable) equals Stage 7 — pipeline terminus, no further deductions' {
+            InModuleScope S2DCartographer {
+                $result = Get-S2DCapacityWaterfall
+                $result.Stages[7].Size.Bytes | Should -Be $result.Stages[6].Size.Bytes
+            }
+        }
+
+        It 'pipeline is monotonically non-increasing from Stage 3 onward' {
+            InModuleScope S2DCartographer {
+                $stages = (Get-S2DCapacityWaterfall).Stages
+                # Stage 1 = Stage 2 (informational), Stage 3 onwards must not increase
+                for ($i = 2; $i -lt $stages.Count - 1; $i++) {
+                    $stages[$i + 1].Size.Bytes | Should -BeLessOrEqual $stages[$i].Size.Bytes `
+                        -Because "Stage $($stages[$i+1].Stage) must not exceed Stage $($stages[$i].Stage)"
+                }
+            }
+        }
+
+        It 'resiliency factor from pool ResiliencySettings overrides default when Mirror entry present' {
+            InModuleScope S2DCartographer {
+                $pool = $Script:S2DSession.CollectedData['StoragePool']
+                $pool.ResiliencySettings = @([PSCustomObject]@{ Name='Mirror'; NumberOfDataCopies=2; PhysicalDiskRedundancy=1; NumberOfColumns=1 })
+
+                $result = Get-S2DCapacityWaterfall
+                $stage6 = $result.Stages[5].Size.Bytes
+                $expected = [int64]($stage6 / 2.0)
+                $result.Stages[6].Size.Bytes | Should -Be $expected
+            }
+        }
+
+        It 'UsableCapacity matches Stage 8' {
+            InModuleScope S2DCartographer {
+                $result = Get-S2DCapacityWaterfall
+                $result.UsableCapacity.Bytes | Should -Be $result.Stages[7].Size.Bytes
+            }
+        }
+
+        It 'BlendedEfficiencyPercent reflects theoretical resiliency efficiency' {
+            InModuleScope S2DCartographer {
+                # Default 3-way mirror → 33.3% efficiency
+                $result = Get-S2DCapacityWaterfall
+                $result.BlendedEfficiencyPercent | Should -Be 33.3
             }
         }
     }
@@ -159,7 +225,6 @@ Describe 'Get-S2DCapacityWaterfall' {
 
         It 'ReserveStatus is Critical when pool free space is critically low' {
             InModuleScope S2DCartographer {
-                # Override pool to have very little free space
                 $pool = $Script:S2DSession.CollectedData['StoragePool']
                 $pool.RemainingSize = [S2DCapacity]::new([int64]3000000000000)   # 3 TB << 15.36 TB reserve
 

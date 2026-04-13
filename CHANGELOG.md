@@ -8,6 +8,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.2.1] — 2026-04-13
+
+### Fixed
+
+- `Get-S2DCapacityWaterfall` Stage 1 now filters to **pool-member capacity-tier disks only** (`IsPoolMember -ne $false`). Boot drives (Dell BOSS, HPE M.2 SmartArray) and SAN-presented LUNs with `Role = 'Capacity'` no longer inflate Raw Physical, which previously caused a false cliff-drop from Stage 1 to Stage 3 on clusters with non-pool disks. Closes [#43](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/43).
+- Stages 7 and 8 are now **purely theoretical**. Previously Stage 7 subtracted live provisioned-volume pool footprint from available pool space (yielding "remaining free pool"), and Stage 8 summed live provisioned-volume sizes — two unrelated metrics that broke the monotonic pipeline contract and caused Stage 8 to exceed Stage 7 on clusters with thin-provisioned volumes. Stage 7 now applies the pool's configured resiliency factor (Mirror `NumberOfDataCopies`; default: 3-way mirror) to Stage 6 (Available). Stage 8 equals Stage 7 — pipeline terminus. Closes [#43](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/43).
+- `BlendedEfficiencyPercent` on the `S2DCapacityWaterfall` object now reflects theoretical resiliency efficiency (e.g., 33.3% for 3-way mirror) rather than a live average across provisioned volumes. Closes [#43](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/43).
+- Stage 2 description clarified: explicitly states no bytes are deducted and that this stage is a vendor-label informational note only (vendor decimal TB vs Windows binary TiB). Closes [#43](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/43).
+
 ## [1.2.0] — 2026-04-13
 
 ### Added

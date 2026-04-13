@@ -1,6 +1,6 @@
 @{
     RootModule           = 'S2DCartographer.psm1'
-    ModuleVersion        = '1.2.0'
+    ModuleVersion        = '1.2.1'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
     Author               = 'Azure Local Cloud'
@@ -50,6 +50,14 @@
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-s2d-cartographer/main/docs/assets/images/s2dcartographer-icon.svg'
             ReleaseNotes = @'
+## v1.2.1 — Capacity model correctness fix
+
+### Fixed
+- `Get-S2DCapacityWaterfall` Stage 1 now counts only pool-member capacity-tier disks (filtered by `IsPoolMember`). Boot drives (Dell BOSS, HPE M.2 SmartArray) and SAN-presented LUNs no longer inflate Raw Physical, eliminating the false cliff-drop from Stage 1 to Stage 3.
+- Stages 7 and 8 are now purely theoretical. Previously they pulled live provisioned-volume data, which caused Stage 8 (Final Usable) to exceed Stage 7 (After Resiliency) on clusters with thin-provisioned volumes, making the pipeline appear to increase. Stage 7 now applies the pool's configured resiliency factor (default: 3-way mirror) to Stage 6 (Available). Stage 8 equals Stage 7 — pipeline terminus.
+- `BlendedEfficiencyPercent` on the `S2DCapacityWaterfall` object now reflects the theoretical resiliency efficiency (e.g., 33.3% for 3-way mirror) instead of a live average across provisioned volumes.
+- Stage 2 description clarified to explicitly state no bytes are deducted — this stage is a vendor-label informational note only. Closes #43.
+
 ## v1.2.0 — Structured data export (JSON/CSV), pool-member filtering, Surveyor cross-link
 
 ### Added

@@ -1,6 +1,6 @@
 # Roadmap
 
-S2DCartographer follows a milestone-based release cadence. Each milestone targets a focused capability area. The current stable release is **v1.2.0**.
+S2DCartographer follows a milestone-based release cadence. Each milestone targets a focused capability area. The current stable release is **v1.2.1**.
 
 Live status of everything below is tracked on [GitHub Milestones](https://github.com/AzureLocal/azurelocal-s2d-cartographer/milestones).
 
