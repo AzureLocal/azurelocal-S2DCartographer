@@ -92,7 +92,9 @@ function Get-S2DHealthStatus {
     # ── Check 2: Disk symmetry ────────────────────────────────────────────────
     # Only pool members count — boot drives (BOSS) and SAN-presented LUNs visible
     # to some nodes but not others are expected asymmetry and not S2D concerns.
-    $poolMemberDisks = @($physDisks | Where-Object { $_.IsPoolMember -eq $true })
+    # Treat missing IsPoolMember (pre-1.2.0 fixtures / older inputs) as pool member
+    # so this filter is backward-compatible.
+    $poolMemberDisks = @($physDisks | Where-Object { $_.IsPoolMember -ne $false })
     $byNode = @($poolMemberDisks | Group-Object NodeName)
     $diskSymmetryOk = $true
     $symmetryDetail = ''
