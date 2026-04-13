@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S2D Cartographer — What-If Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--blue:#0078d4;--green:#107c10;--red:#d13438;--amber:#e8a218;--bg:#faf9f8;--card:#fff;--border:#edebe9;--text:#201f1e;--muted:#605e5c}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{background:var(--blue);color:white;padding:20px 32px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:22px;font-weight:600}
+header .meta{font-size:12px;opacity:.85;text-align:right}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.section{background:var(--card);border:1px solid var(--border);border-radius:6px;margin-bottom:20px;padding:20px}
+.section h2{font-size:16px;font-weight:600;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--blue);color:var(--blue)}
+.kpi-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px 20px;text-align:center;min-width:140px}
+.kpi .val{font-size:22px;font-weight:700;color:var(--blue)}.kpi .lbl{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi.positive .val{color:var(--green)}.kpi.negative .val{color:var(--red)}
+.scenario-badge{display:inline-block;background:#eff6fc;color:#0078d4;border:1px solid #c7e0f4;border-radius:4px;padding:4px 12px;font-size:13px;font-weight:600;margin-bottom:16px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.chart-wrap{position:relative;height:320px}
+.chart-label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f3f2f1;text-align:left;padding:8px 10px;font-weight:600;border-bottom:2px solid var(--border)}
+td{padding:7px 10px;border-bottom:1px solid var(--border)}
+tr:hover{background:#f3f2f1}
+.delta-summary{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:16px;display:flex;gap:32px;align-items:center}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>S2D Cartographer — What-If Analysis</h1>
+    <div style="font-size:13px;opacity:.9">Capacity impact modeling</div>
+  </div>
+  <div class="meta">Generated: 2026-04-13 21:40<br>Nodes: 4 → 6</div>
+</header>
+<div class="container">
+
+<div class="section">
+  <h2>Scenario</h2>
+  <div class="scenario-badge">+4 disks/node, +2 nodes</div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="val">13.95 TiB</div><div class="lbl">Baseline Usable</div></div>
+    <div class="kpi"><div class="val">101.3 TiB</div><div class="lbl">Projected Usable</div></div>
+    <div class="kpi positive">
+      <div class="val">+87.35 TiB</div><div class="lbl">Delta Usable</div>
+    </div>
+    <div class="kpi"><div class="val">Critical</div><div class="lbl">Baseline Reserve</div></div>
+    <div class="kpi"><div class="val">Adequate</div><div class="lbl">Projected Reserve</div></div>
+    <div class="kpi"><div class="val">33.3%</div><div class="lbl">Baseline Efficiency</div></div>
+    <div class="kpi"><div class="val">33.3%</div><div class="lbl">Projected Efficiency</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Capacity Waterfall — Before vs After</h2>
+  <div class="chart-grid">
+    <div>
+      <div class="chart-label">Baseline</div>
+      <div class="chart-wrap"><canvas id="baseChart"></canvas></div>
+    </div>
+    <div>
+      <div class="chart-label">Projected (+4 disks/node, +2 nodes)</div>
+      <div class="chart-wrap"><canvas id="projChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Stage-by-Stage Delta</h2>
+  <table>
+    <thead><tr><th>#</th><th>Stage</th><th style="text-align:right">Baseline</th><th style="text-align:right">Projected</th><th style="text-align:right">Delta</th></tr></thead>
+    <tbody><tr><td style='font-weight:700;color:#0078d4'>1</td><td style='font-weight:600'>Raw Physical</td><td style='text-align:right'>55.88 TiB</td><td style='text-align:right'>335.28 TiB</td><td style='text-align:right;font-weight:700;color:#107c10'>+279.4 TiB</td></tr>
+<tr><td style='font-weight:700;color:#0078d4'>2</td><td style='font-weight:600'>Vendor Label (TB)</td><td style='text-align:right'>55.88 TiB</td><td style='text-align:right'>335.28 TiB</td><td style='text-align:right;font-weight:700;color:#107c10'>+279.4 TiB</td></tr>
+<tr><td style='font-weight:700;color:#0078d4'>3</td><td style='font-weight:600'>Pool (after overhead)</td><td style='text-align:right'>55.88 TiB</td><td style='text-align:right'>331.92 TiB</td><td style='text-align:right;font-weight:700;color:#107c10'>+276.04 TiB</td></tr>
+<tr><td style='font-weight:700;color:#0078d4'>4</td><td style='font-weight:600'>After Reserve</td><td style='text-align:right'>41.91 TiB</td><td style='text-align:right'>303.98 TiB</td><td style='text-align:right;font-weight:700;color:#107c10'>+262.07 TiB</td></tr>
+<tr><td style='font-weight:700;color:#0078d4'>5</td><td style='font-weight:600'>After Infra Volume</td><td style='text-align:right'>41.84 TiB</td><td style='text-align:right'>303.91 TiB</td><td style='text-align:right;font-weight:700;color:#107c10'>+262.07 TiB</td></tr>
+<tr><td style='font-weight:700;color:#0078d4'>6</td><td style='font-weight:600'>Available</td><td style='text-align:right'>41.84 TiB</td><td style='text-align:right'>303.91 TiB</td><td style='text-align:right;font-weight:700;color:#107c10'>+262.07 TiB</td></tr>
+<tr><td style='font-weight:700;color:#0078d4'>7</td><td style='font-weight:600'>After Resiliency</td><td style='text-align:right'>13.95 TiB</td><td style='text-align:right'>101.3 TiB</td><td style='text-align:right;font-weight:700;color:#107c10'>+87.36 TiB</td></tr>
+<tr><td style='font-weight:700;color:#0078d4'>8</td><td style='font-weight:600'>Final Usable</td><td style='text-align:right'>13.95 TiB</td><td style='text-align:right'>101.3 TiB</td><td style='text-align:right;font-weight:700;color:#107c10'>+87.36 TiB</td></tr></tbody>
+  </table>
+</div>
+
+</div>
+<script>
+const labels  = ['Raw Physical','Vendor Label (TB)','Pool (after overhead)','After Reserve','After Infra Volume','Available','After Resiliency','Final Usable'];
+const bVals   = [55.88,55.88,55.88,41.91,41.84,41.84,13.95,13.95];
+const pVals   = [335.28,335.28,331.92,303.98,303.91,303.91,101.3,101.3];
+const colors  = ['#0078d4','#005a9e','#106ebe','#e8a218','#d47a00','#107c10','#0e6e0e','#054b05'];
+
+function makeChart(id, vals) {
+  new Chart(document.getElementById(id).getContext('2d'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: vals, backgroundColor: colors, borderRadius: 4 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw + ' TiB' } } },
+      scales: { x: { beginAtZero: true, title: { display: true, text: 'TiB' } } }
+    }
+  });
+}
+makeChart('baseChart', bVals);
+makeChart('projChart', pVals);
+</script>
+</body>
+</html>

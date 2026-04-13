@@ -1,0 +1,261 @@
+{
+  "SchemaVersion": "1.0",
+  "Type": "S2DWhatIfResult",
+  "Generated": {
+    "Timestamp": "2026-04-13T21:40:44.6575115Z",
+    "ModuleVersion": "1.3.0"
+  },
+  "ScenarioLabel": "+4 disks/node, +2 nodes",
+  "BaselineNodeCount": 4,
+  "ProjectedNodeCount": 6,
+  "DeltaUsableTiB": 87.35,
+  "DeltaUsableTB": 96.05,
+  "BaselineWaterfall": {
+    "RawCapacityTiB": 55.88,
+    "RawCapacityTB": 61.44,
+    "UsableCapacityTiB": 13.95,
+    "UsableCapacityTB": 15.33,
+    "ReserveStatus": "Critical",
+    "BlendedEfficiencyPercent": 33.3,
+    "NodeCount": 4,
+    "Stages": [
+      {
+        "Stage": 1,
+        "Name": "Raw Physical",
+        "SizeTiB": 55.88,
+        "SizeTB": 61.44,
+        "DeltaTiB": null,
+        "Description": "Sum of pool-member capacity-tier disk sizes (16 drives, 3.49 TB each)",
+        "Status": "OK"
+      },
+      {
+        "Stage": 2,
+        "Name": "Vendor Label (TB)",
+        "SizeTiB": 55.88,
+        "SizeTB": 61.44,
+        "DeltaTiB": null,
+        "Description": "Informational — vendor labels drives in decimal TB; Windows reports binary TiB. Vendor label: 61.44 TB. No bytes deducted.",
+        "Status": "OK"
+      },
+      {
+        "Stage": 3,
+        "Name": "Pool (after overhead)",
+        "SizeTiB": 55.88,
+        "SizeTB": 61.44,
+        "DeltaTiB": null,
+        "Description": "Storage pool overhead (~1%). Pool total: 55.88 TB",
+        "Status": "OK"
+      },
+      {
+        "Stage": 4,
+        "Name": "After Reserve",
+        "SizeTiB": 41.91,
+        "SizeTB": 46.08,
+        "DeltaTiB": 13.97,
+        "Description": "Reserve: min(4,4) × 3.49 TB = 13.97 TB",
+        "Status": "Critical"
+      },
+      {
+        "Stage": 5,
+        "Name": "After Infra Volume",
+        "SizeTiB": 41.84,
+        "SizeTB": 46.0,
+        "DeltaTiB": 0.07,
+        "Description": "Infrastructure volume footprint: 75 GiB",
+        "Status": "OK"
+      },
+      {
+        "Stage": 6,
+        "Name": "Available",
+        "SizeTiB": 41.84,
+        "SizeTB": 46.0,
+        "DeltaTiB": null,
+        "Description": "Pool space available for workload volumes",
+        "Status": "OK"
+      },
+      {
+        "Stage": 7,
+        "Name": "After Resiliency",
+        "SizeTiB": 13.95,
+        "SizeTB": 15.33,
+        "DeltaTiB": 27.89,
+        "Description": "Theoretical resiliency overhead (3-way mirror, 33.3% efficiency). Available ÷ 3.",
+        "Status": "OK"
+      },
+      {
+        "Stage": 8,
+        "Name": "Final Usable",
+        "SizeTiB": 13.95,
+        "SizeTB": 15.33,
+        "DeltaTiB": null,
+        "Description": "Pipeline terminus — no further theoretical deductions. Usable VM and workload capacity under 3-way mirror resiliency.",
+        "Status": "OK"
+      }
+    ]
+  },
+  "ProjectedWaterfall": {
+    "RawCapacityTiB": 335.28,
+    "RawCapacityTB": 368.64,
+    "UsableCapacityTiB": 101.3,
+    "UsableCapacityTB": 111.38,
+    "ReserveStatus": "Adequate",
+    "BlendedEfficiencyPercent": 33.3,
+    "NodeCount": 6,
+    "Stages": [
+      {
+        "Stage": 1,
+        "Name": "Raw Physical",
+        "SizeTiB": 335.28,
+        "SizeTB": 368.64,
+        "DeltaTiB": null,
+        "Description": "Sum of pool-member capacity-tier disk sizes (48 drives, 6.98 TB each)",
+        "Status": "OK"
+      },
+      {
+        "Stage": 2,
+        "Name": "Vendor Label (TB)",
+        "SizeTiB": 335.28,
+        "SizeTB": 368.64,
+        "DeltaTiB": null,
+        "Description": "Informational — vendor labels drives in decimal TB; Windows reports binary TiB. Vendor label: 368.64 TB. No bytes deducted.",
+        "Status": "OK"
+      },
+      {
+        "Stage": 3,
+        "Name": "Pool (after overhead)",
+        "SizeTiB": 331.92,
+        "SizeTB": 364.95,
+        "DeltaTiB": 3.35,
+        "Description": "Storage pool overhead (~1%). Pool total: 331.92 TB",
+        "Status": "OK"
+      },
+      {
+        "Stage": 4,
+        "Name": "After Reserve",
+        "SizeTiB": 303.98,
+        "SizeTB": 334.23,
+        "DeltaTiB": 27.94,
+        "Description": "Reserve: min(6,4) × 6.98 TB = 27.94 TB",
+        "Status": "OK"
+      },
+      {
+        "Stage": 5,
+        "Name": "After Infra Volume",
+        "SizeTiB": 303.91,
+        "SizeTB": 334.15,
+        "DeltaTiB": 0.07,
+        "Description": "Infrastructure volume footprint: 75 GiB",
+        "Status": "OK"
+      },
+      {
+        "Stage": 6,
+        "Name": "Available",
+        "SizeTiB": 303.91,
+        "SizeTB": 334.15,
+        "DeltaTiB": null,
+        "Description": "Pool space available for workload volumes",
+        "Status": "OK"
+      },
+      {
+        "Stage": 7,
+        "Name": "After Resiliency",
+        "SizeTiB": 101.3,
+        "SizeTB": 111.38,
+        "DeltaTiB": 202.61,
+        "Description": "Theoretical resiliency overhead (3-way mirror, 33.3% efficiency). Available ÷ 3.",
+        "Status": "OK"
+      },
+      {
+        "Stage": 8,
+        "Name": "Final Usable",
+        "SizeTiB": 101.3,
+        "SizeTB": 111.38,
+        "DeltaTiB": null,
+        "Description": "Pipeline terminus — no further theoretical deductions. Usable VM and workload capacity under 3-way mirror resiliency.",
+        "Status": "OK"
+      }
+    ]
+  },
+  "DeltaStages": [
+    {
+      "Stage": 1,
+      "Name": "Raw Physical",
+      "BaselineTiB": 55.88,
+      "ProjectedTiB": 335.28,
+      "DeltaTiB": 279.4,
+      "BaselineTB": 61.44,
+      "ProjectedTB": 368.64,
+      "DeltaTB": 307.2
+    },
+    {
+      "Stage": 2,
+      "Name": "Vendor Label (TB)",
+      "BaselineTiB": 55.88,
+      "ProjectedTiB": 335.28,
+      "DeltaTiB": 279.4,
+      "BaselineTB": 61.44,
+      "ProjectedTB": 368.64,
+      "DeltaTB": 307.2
+    },
+    {
+      "Stage": 3,
+      "Name": "Pool (after overhead)",
+      "BaselineTiB": 55.88,
+      "ProjectedTiB": 331.92,
+      "DeltaTiB": 276.04,
+      "BaselineTB": 61.44,
+      "ProjectedTB": 364.95,
+      "DeltaTB": 303.51
+    },
+    {
+      "Stage": 4,
+      "Name": "After Reserve",
+      "BaselineTiB": 41.91,
+      "ProjectedTiB": 303.98,
+      "DeltaTiB": 262.07,
+      "BaselineTB": 46.08,
+      "ProjectedTB": 334.23,
+      "DeltaTB": 288.15
+    },
+    {
+      "Stage": 5,
+      "Name": "After Infra Volume",
+      "BaselineTiB": 41.84,
+      "ProjectedTiB": 303.91,
+      "DeltaTiB": 262.07,
+      "BaselineTB": 46.0,
+      "ProjectedTB": 334.15,
+      "DeltaTB": 288.15
+    },
+    {
+      "Stage": 6,
+      "Name": "Available",
+      "BaselineTiB": 41.84,
+      "ProjectedTiB": 303.91,
+      "DeltaTiB": 262.07,
+      "BaselineTB": 46.0,
+      "ProjectedTB": 334.15,
+      "DeltaTB": 288.15
+    },
+    {
+      "Stage": 7,
+      "Name": "After Resiliency",
+      "BaselineTiB": 13.95,
+      "ProjectedTiB": 101.3,
+      "DeltaTiB": 87.36,
+      "BaselineTB": 15.33,
+      "ProjectedTB": 111.38,
+      "DeltaTB": 96.05
+    },
+    {
+      "Stage": 8,
+      "Name": "Final Usable",
+      "BaselineTiB": 13.95,
+      "ProjectedTiB": 101.3,
+      "DeltaTiB": 87.36,
+      "BaselineTB": 15.33,
+      "ProjectedTB": 111.38,
+      "DeltaTB": 96.05
+    }
+  ]
+}

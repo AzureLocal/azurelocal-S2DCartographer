@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S2D Cartographer — azlocal-iic-s2d-01</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--blue:#0078d4;--teal:#008272;--green:#107c10;--amber:#e8a218;--red:#d13438;--bg:#faf9f8;--card:#ffffff;--border:#edebe9;--text:#201f1e;--muted:#605e5c}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{background:var(--blue);color:white;padding:20px 32px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:22px;font-weight:600}
+header .meta{font-size:12px;opacity:.85;text-align:right}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.section{background:var(--card);border:1px solid var(--border);border-radius:6px;margin-bottom:20px;padding:20px}
+.section h2{font-size:16px;font-weight:600;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--blue);color:var(--blue)}
+.overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
+.kpi .val{font-size:22px;font-weight:700;color:var(--blue)}
+.kpi .lbl{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi.alert .val{color:var(--red)}
+.health-banner{border-radius:6px;padding:12px 20px;margin-bottom:16px;font-weight:600;font-size:15px;background:#fde7e9;color:#d13438}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f3f2f1;text-align:left;padding:8px 10px;font-weight:600;border-bottom:2px solid var(--border)}
+td{padding:7px 10px;border-bottom:1px solid var(--border)}
+tr:hover{background:#f3f2f1}
+.badge{display:inline-block;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:600}
+.badge.ok{background:#dff6dd;color:#107c10}.badge.fail{background:#fde7e9;color:#d13438}.badge.warn{background:#fff4ce;color:#d47a00}.badge.info{background:#eff6fc;color:#0078d4}
+.hc-card{display:flex;align-items:flex-start;gap:12px;border-radius:6px;padding:12px 16px;margin-bottom:8px;border-left:4px solid}
+.hc-pass{background:#dff6dd;border-color:#107c10}.hc-warn{background:#fff4ce;border-color:#e8a218}.hc-fail{background:#fde7e9;border-color:#d13438}.hc-info{background:#eff6fc;border-color:#0078d4}
+.hc-icon{font-size:20px;min-width:24px}.hc-body strong{font-size:13px}.hc-body p{font-size:12px;color:var(--muted);margin-top:4px}.remediation{color:#323130 !important;font-style:italic}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px}
+.toggle-btn{background:var(--blue);color:white;border:none;border-radius:4px;padding:5px 14px;cursor:pointer;font-size:12px}
+.chart-wrap{position:relative;height:320px}
+.tib-tb-table{font-size:13px}
+.tib-tb-table th,.tib-tb-table td{padding:6px 14px}
+@media print{.toggle-row{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>S2D Cartographer Report</h1>
+    <div style="font-size:13px;opacity:.9">azlocal-iic-s2d-01 &nbsp;|&nbsp; 4 nodes</div>
+  </div>
+  <div class="meta">
+    Generated: 2026-04-13 05:30<br>
+    By: MAPROOM simulation<br>
+    Infinite Improbability Corp
+  </div>
+</header>
+<div class="container">
+
+<div class="section">
+  <h2>Executive Summary</h2>
+  <div class="health-banner">&#9888; Overall Health: FAIL — Pool is overcommitted. Rebuild reserve exhausted. Immediate action required.</div>
+  <div class="overview-grid">
+    <div class="kpi"><div class="val">4</div><div class="lbl">Nodes</div></div>
+    <div class="kpi"><div class="val">55.88 TiB</div><div class="lbl">Raw Capacity</div></div>
+    <div class="kpi"><div class="val">13.60 TiB</div><div class="lbl">Usable Capacity</div></div>
+    <div class="kpi alert"><div class="val">0 TiB</div><div class="lbl">Pool Free</div></div>
+    <div class="kpi"><div class="val">16</div><div class="lbl">Physical Disks</div></div>
+    <div class="kpi"><div class="val">4</div><div class="lbl">Workload Volumes</div></div>
+    <div class="kpi alert"><div class="val">Critical</div><div class="lbl">Reserve Status</div></div>
+    <div class="kpi"><div class="val">33.3%</div><div class="lbl">Resiliency Efficiency</div></div>
+  </div>
+  <p><strong>Pool:</strong> S2D on azlocal-iic-s2d-01 &nbsp; <strong>Health:</strong> <span style="color:#d47a00">Warning / Degraded</span> &nbsp; <strong>Total:</strong> 55.88 TiB &nbsp; <strong>Allocated:</strong> <span style="color:#d13438">68.21 TiB</span> &nbsp; <strong>Free:</strong> <span style="color:#d13438">0 TiB</span> &nbsp; <strong>Overcommit:</strong> <span style="color:#d13438">1.22x</span></p>
+  <p style="margin-top:8px"><strong>Cache Mode:</strong> WriteOnly <span class="badge info">All-Flash</span> &nbsp; <strong>State:</strong> NotApplicable &nbsp; <strong>Cache Disks:</strong> 0 (all-NVMe cluster)</p>
+</div>
+
+<div class="section">
+  <h2>Capacity Waterfall</h2>
+  <div class="toggle-row">
+    <span>Display unit:</span>
+    <button class="toggle-btn" onclick="toggleUnit()">Toggle TiB / TB</button>
+    <span id="unitLabel" style="font-weight:600">TiB</span>
+  </div>
+  <div class="chart-wrap"><canvas id="waterfallChart"></canvas></div>
+</div>
+
+<div class="section">
+  <h2>Physical Disk Inventory</h2>
+  <table>
+    <thead><tr><th>Node</th><th>Model</th><th>Media</th><th>Role</th><th>Size</th><th>Wear %</th><th>Health</th></tr></thead>
+    <tbody>
+      <tr><td>azl-iic-n01</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>4%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n01</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>5%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n01</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>6%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n01</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>7%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n02</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>6%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n02</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>7%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n02</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>8%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n02</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>9%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n03</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>8%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n03</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>9%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n03</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>10%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n03</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>11%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n04</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>10%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n04</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>11%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n04</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>12%</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>azl-iic-n04</td><td>INTEL SSDPE2KX040T8</td><td>NVMe</td><td>Capacity</td><td>3.49 TiB (3.84 TB)</td><td>13%</td><td><span class="badge ok">Healthy</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Volume Map</h2>
+  <table>
+    <thead><tr><th>Volume</th><th>Resiliency</th><th>Size</th><th>Pool Footprint</th><th>Efficiency</th><th>Provisioning</th><th>Health</th></tr></thead>
+    <tbody>
+      <tr><td>ClusterPerformanceHistory <span class="badge info">Infra</span></td><td>Mirror (3 copies)</td><td>0.02 TiB</td><td>0.07 TiB</td><td>33.3%</td><td>Fixed</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>VM-OS</td><td>Mirror (3 copies)</td><td>7.28 TiB</td><td>21.83 TiB</td><td>33.3%</td><td>Fixed</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>VM-Data</td><td>Mirror (3 copies)</td><td>9.09 TiB</td><td>27.29 TiB</td><td>33.3%</td><td>Fixed</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>Backup</td><td>Mirror (3 copies)</td><td>4.55 TiB</td><td>13.64 TiB</td><td>33.3%</td><td>Fixed</td><td><span class="badge ok">Healthy</span></td></tr>
+      <tr><td>Archive</td><td>Mirror (3 copies)</td><td>1.82 TiB</td><td>5.46 TiB</td><td>33.3%</td><td>Fixed</td><td><span class="badge ok">Healthy</span></td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:10px;font-size:12px;color:var(--red)"><strong>&#9888; Warning:</strong> Total pool footprint (68.29 TiB) exceeds pool total (55.88 TiB). The pool is overcommitted by 12.41 TiB — any write can fail unexpectedly.</p>
+</div>
+
+<div class="section">
+  <h2>Health Checks</h2>
+
+  <div class="hc-card hc-fail">
+    <span class="hc-icon">&#10006;</span>
+    <div class="hc-body">
+      <strong>ReserveAdequacy</strong> <em>[Error]</em>
+      <p>Pool has 0 B free but 15.36 TB is recommended for single-node rebuild. S2D cannot auto-repair after a drive failure.</p>
+      <p class="remediation"><strong>Remediation:</strong> Remove or shrink volumes to restore at least 15.36 TB of pool free space, or expand the cluster with additional nodes/drives.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-fail">
+    <span class="hc-icon">&#10006;</span>
+    <div class="hc-body">
+      <strong>OverCapacity</strong> <em>[Error]</em>
+      <p>Pool allocated 75.00 TB exceeds pool total 61.44 TB (122% utilization). Volumes are thin-over-thick oversubscribed.</p>
+      <p class="remediation"><strong>Remediation:</strong> Reduce allocated volume footprint below pool total. Each TB of volume consumes 3 TB of pool under three-way mirror.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-fail">
+    <span class="hc-icon">&#10006;</span>
+    <div class="hc-body">
+      <strong>HighUtilization</strong> <em>[Error]</em>
+      <p>Pool utilization is 122%. S2D best practice is to keep utilization below 70%.</p>
+      <p class="remediation"><strong>Remediation:</strong> Free pool capacity by removing volumes, migrating data off, or adding capacity drives.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-fail">
+    <span class="hc-icon">&#10006;</span>
+    <div class="hc-body">
+      <strong>ThinOvercommit</strong> <em>[Error]</em>
+      <p>Pool footprint exceeds pool total capacity. Any write pressure can fail unexpectedly.</p>
+      <p class="remediation"><strong>Remediation:</strong> Reduce provisioned size or add capacity.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-fail">
+    <span class="hc-icon">&#10006;</span>
+    <div class="hc-body">
+      <strong>RebuildCapacity</strong> <em>[Error]</em>
+      <p>Available pool free space (0 B) is below required rebuild reserve (15.36 TB). Drive failure will leave the pool degraded until volumes are reduced.</p>
+      <p class="remediation"><strong>Remediation:</strong> Restore 15.36 TB of pool free space before relying on auto-rebuild.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">&#10004;</span>
+    <div class="hc-body">
+      <strong>DiskSymmetry</strong> <em>[Info]</em>
+      <p>All 4 nodes have an equal 4 capacity disks.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">&#10004;</span>
+    <div class="hc-body">
+      <strong>VolumeHealth</strong> <em>[Warning]</em>
+      <p>All 5 volumes report Healthy / OK.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">&#10004;</span>
+    <div class="hc-body">
+      <strong>DiskHealth</strong> <em>[Warning]</em>
+      <p>All 16 physical disks report Healthy / OK.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">&#10004;</span>
+    <div class="hc-body">
+      <strong>NVMeWear</strong> <em>[Info]</em>
+      <p>Highest NVMe wear is 13% on azl-iic-n04 / disk 4. Well within drive life.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">&#10004;</span>
+    <div class="hc-body">
+      <strong>FirmwareConsistency</strong> <em>[Info]</em>
+      <p>All INTEL SSDPE2KX040T8 disks are on firmware VCV10162.</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">&#10004;</span>
+    <div class="hc-body">
+      <strong>InfrastructureVolume</strong> <em>[Info]</em>
+      <p>ClusterPerformanceHistory volume detected (25 GiB, Three-Way Mirror).</p>
+    </div>
+  </div>
+
+  <div class="hc-card hc-pass">
+    <span class="hc-icon">&#10004;</span>
+    <div class="hc-body">
+      <strong>CacheTierHealth</strong> <em>[Info]</em>
+      <p>All-NVMe cluster — no dedicated cache tier.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="section">
+  <h2>Understanding Storage Units — TiB vs TB</h2>
+  <p style="margin-bottom:12px;color:var(--muted)">Hard drive manufacturers use decimal (1 TB = 1,000,000,000,000 bytes). Windows reports in binary (1 TiB = 1,099,511,627,776 bytes). This creates an apparent ~9% discrepancy — the data is all there, it's just expressed in different units.</p>
+  <table class="tib-tb-table">
+    <thead><tr><th>Drive Label (TB)</th><th>Windows Reports (TiB)</th><th>Difference</th></tr></thead>
+    <tbody>
+      <tr><td>0.96 TB</td><td>0.873 TiB</td><td style="color:var(--red)">-9.3%</td></tr>
+      <tr><td>1.92 TB</td><td>1.747 TiB</td><td style="color:var(--red)">-9.0%</td></tr>
+      <tr><td>3.84 TB</td><td>3.492 TiB</td><td style="color:var(--red)">-9.1%</td></tr>
+      <tr><td>7.68 TB</td><td>6.986 TiB</td><td style="color:var(--red)">-9.0%</td></tr>
+      <tr><td>15.36 TB</td><td>13.97 TiB</td><td style="color:var(--red)">-9.1%</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<script>
+const tibValues = [55.88, 55.88, 54.76, 40.79, 40.79, 13.60, 22.74, 0];
+const tbValues  = [61.44, 61.44, 60.21, 44.85, 44.85, 14.95, 25.00, 0];
+const labels    = [
+  'Stage 1: Raw Physical',
+  'Stage 2: Pool Total',
+  'Stage 3: Filesystem Overhead',
+  'Stage 4: Rebuild Reserve',
+  'Stage 5: Usable After Reserve',
+  'Stage 6: Three-Way Mirror',
+  'Stage 7: Allocated to Volumes',
+  'Stage 8: Free for Growth'
+];
+const bgColors = ['#0078d4','#005a9e','#106ebe','#e8a218','#d47a00','#107c10','#d13438','#a80000'];
+let useTiB = true;
+
+const ctx = document.getElementById('waterfallChart').getContext('2d');
+const chart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Capacity (TiB)',
+      data: tibValues,
+      backgroundColor: bgColors,
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ctx.raw + (useTiB ? ' TiB' : ' TB') } }
+    },
+    scales: { x: { beginAtZero: true, title: { display: true, text: 'TiB' } } }
+  }
+});
+
+function toggleUnit() {
+  useTiB = !useTiB;
+  document.getElementById('unitLabel').textContent = useTiB ? 'TiB' : 'TB';
+  chart.data.datasets[0].data = useTiB ? tibValues : tbValues;
+  chart.data.datasets[0].label = useTiB ? 'Capacity (TiB)' : 'Capacity (TB)';
+  chart.options.scales.x.title.text = useTiB ? 'TiB' : 'TB';
+  chart.update();
+}
+</script>
+</body>
+</html>

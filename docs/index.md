@@ -45,6 +45,7 @@ Invoke-S2DCartographer -ClusterName "my-cluster" -Credential (Get-Credential) -F
 
 ## Navigation
 
+- **[Sample Reports](samples.md)** — Browse real HTML, JSON, and what-if output before running the tool
 - **[Getting Started](getting-started.md)** — Prerequisites, installation, first run
 - **[Connecting](connecting.md)** — Domain-joined, non-domain, local node, and Key Vault connection scenarios
 - **[Collectors](collectors.md)** — What each collector gathers and from where
