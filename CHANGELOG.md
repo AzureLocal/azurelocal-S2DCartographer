@@ -8,6 +8,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.0.7] — 2026-04-13
+
+### Added
+
+- **Storage Pool Health bar** — WAC-style horizontal bar showing volumes used (blue), free space (green), rebuild reserve intact (amber), reserve consumed (red hazard stripe), and overcommit beyond pool total (dark red). Reserve boundary and pool total marked with labeled vertical lines.
+- **Pool Allocation Breakdown bar** — stacked bar showing per-volume pool footprint with reserve and overcommit segments.
+- **Capacity Model stage descriptions** — table beneath the capacity chart explaining what each of the 8 stages represents, with delta cost and remaining capacity per step. Descriptions sourced from waterfall stage objects so live cluster data populates them automatically.
+- **Critical Reserve Status KPI** — Reserve Status card in the executive summary now renders with red background and text when status is `Critical`.
+
+### Changed
+
+- HTML report section "Capacity Waterfall" renamed to **"Capacity Model"** with subtitle clarifying it is the theoretical S2D best-practice pipeline, not a live utilisation view. Actual state is reflected in the Volume Map and Health Checks sections.
+
+### Fixed
+
+- `Show-S2DOverprovisionedReport.ps1` — replaced hardcoded `using module` with runtime dot-source of class files so the script runs correctly from any working directory without requiring module type export.
+
 ## [1.0.6] — 2026-04-12
 
 ### Fixed

@@ -1,6 +1,6 @@
 @{
     RootModule           = 'S2DCartographer.psm1'
-    ModuleVersion        = '1.0.6'
+    ModuleVersion        = '1.0.7'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
     Author               = 'Azure Local Cloud'
@@ -47,6 +47,17 @@
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-s2d-cartographer/main/docs/assets/images/s2dcartographer-icon.svg'
             ReleaseNotes = @'
+## v1.0.7 — HTML report: pool health bar, capacity model, stage descriptions
+
+### Added
+- **Storage Pool Health bar** — WAC-style horizontal bar showing volumes used, free space, rebuild reserve (intact in amber / consumed in red hazard stripe), and overcommit (dark red overflow past pool total). Reserve boundary and pool total marked with labeled vertical lines.
+- **Pool Allocation Breakdown bar** — stacked bar showing per-volume pool footprint with reserve and overcommit segments.
+- **Capacity Model stage descriptions** — table below the capacity chart explaining what each of the 8 stages represents, with delta cost and remaining capacity at each step.
+- **Critical Reserve Status KPI** — Reserve Status card in the executive summary now renders with a red background when status is Critical.
+
+### Changed
+- HTML report section "Capacity Waterfall" renamed to "Capacity Model" with a subtitle clarifying it is the theoretical S2D best-practice pipeline, not a live utilisation view. Actual state is in the Volume Map and Health Checks.
+
 ## v1.0.2 — Fix WinRM authentication for non-domain and cross-domain environments
 
 ### Fixed in 1.0.2

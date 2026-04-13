@@ -23,11 +23,72 @@ function Export-S2DHtmlReport {
     $overallFg = switch ($oh) { 'Healthy'{'#107c10'} 'Warning'{'#d47a00'} 'Critical'{'#d13438'} default{'#323130'} }
 
     # ── Waterfall chart data ──────────────────────────────────────────────────
-    $wfLabels = ''
-    $wfValues = ''
+    $wfLabels   = ''
+    $wfValues   = ''
+    $wfDescRows = ''
     if ($wf) {
         $wfLabels = ($wf.Stages | ForEach-Object { "'Stage $($_.Stage): $($_.Name)'" }) -join ','
         $wfValues = ($wf.Stages | ForEach-Object { if ($_.Size) { [math]::Round($_.Size.TiB, 2) } else { 0 } }) -join ','
+        $wfDescRows = ($wf.Stages | ForEach-Object {
+            $icon     = switch ($_.Status) {
+                'Fail'    { '<span style="color:#d13438;font-size:15px">&#10006;</span>' }
+                'Warn'    { '<span style="color:#e8a218;font-size:15px">&#9888;</span>' }
+                default   { '<span style="color:#107c10;font-size:15px">&#10004;</span>' }
+            }
+            $deltaStr = if ($_.Delta -and [math]::Abs($_.Delta.TB) -gt 0) {
+                "<span style='color:#d13438;font-size:11px;margin-left:6px'>$([math]::Round($_.Delta.TB,2)) TB</span>"
+            } else { '' }
+            $remaining = if ($_.Size) { "$([math]::Round($_.Size.TB,2)) TB" } else { '0 TB' }
+            "<tr><td style='width:28px;text-align:center;padding:6px 4px'>$icon</td><td style='width:24px;font-weight:700;color:#0078d4;padding:6px 8px'>$($_.Stage)</td><td style='font-weight:600;padding:6px 8px;white-space:nowrap'>$($_.Name)$deltaStr</td><td style='color:#605e5c;padding:6px 8px;font-size:12px'>$($_.Description)</td><td style='text-align:right;font-weight:600;padding:6px 8px;white-space:nowrap'>$remaining</td></tr>"
+        }) -join "`n"
+    }
+
+    # ── Pool breakdown bar data ───────────────────────────────────────────────
+    $poolBarDatasets  = ''
+    $poolTotalTB      = 0
+    $reserveTB        = 0
+    $phUsed           = 0
+    $phFree           = 0
+    $phReserveOk      = 0
+    $phReserveEaten   = 0
+    $phOvercommit     = 0
+    $phAvailLine      = 0
+    if ($pool -and $vols) {
+        $poolTotalTB = $pool.TotalSize.TB
+        $reserveTB   = if ($wf) { [math]::Round($wf.ReserveRecommended.TB, 2) } else { 0 }
+        $volColors   = @('#0078d4','#005a9e','#106ebe','#005b70','#00b7c3','#006f94','#4ba3c7','#00546e')
+        $ci          = 0
+        $dsLines     = @()
+
+        foreach ($v in $vols) {
+            $ftb   = if ($v.FootprintOnPool) { [math]::Round($v.FootprintOnPool.TB, 2) } else { 0 }
+            $label = if ($v.IsInfrastructureVolume) { "$($v.FriendlyName) (infra) $ftb TB" } else { "$($v.FriendlyName) $ftb TB" }
+            $color = if ($v.IsInfrastructureVolume) { '#008272' } else { $volColors[$ci % $volColors.Count]; $ci++ }
+            $dsLines += "{ label: '$label', data: [$ftb], backgroundColor: '$color', borderWidth: 0 }"
+        }
+
+        $totalFootprintTB = [math]::Round(($vols | ForEach-Object { if ($_.FootprintOnPool) { $_.FootprintOnPool.TB } else { 0 } } | Measure-Object -Sum).Sum, 2)
+        $freeTB           = [math]::Round([math]::Max(0, $poolTotalTB - $totalFootprintTB), 2)
+        $overcommitTB     = [math]::Round([math]::Max(0, $totalFootprintTB - $poolTotalTB), 2)
+
+        if ($freeTB -gt 0) {
+            $dsLines += "{ label: 'Free $freeTB TB', data: [$freeTB], backgroundColor: '#dff6dd', borderWidth: 0 }"
+        }
+        if ($overcommitTB -gt 0) {
+            $dsLines += "{ label: 'Overcommit $overcommitTB TB', data: [$overcommitTB], backgroundColor: '#d13438', borderWidth: 0 }"
+        }
+
+        $poolBarDatasets = $dsLines -join ','
+
+        # Pool health bar segments
+        $availForVols      = [math]::Round([math]::Max(0, $poolTotalTB - $reserveTB), 2)
+        $phUsed            = [math]::Round([math]::Min($totalFootprintTB, $availForVols), 2)
+        $phFree            = [math]::Round([math]::Max(0, $availForVols - $totalFootprintTB), 2)
+        $eatIntoReserve    = [math]::Round([math]::Max(0, $totalFootprintTB - $availForVols), 2)
+        $phReserveOk       = [math]::Round([math]::Max(0, $reserveTB - $eatIntoReserve), 2)
+        $phReserveEaten    = [math]::Round([math]::Min($reserveTB, $eatIntoReserve), 2)
+        $phOvercommit      = [math]::Round([math]::Max(0, $totalFootprintTB - $poolTotalTB), 2)
+        $phAvailLine       = $availForVols
     }
 
     # ── Disk inventory table rows ─────────────────────────────────────────────
@@ -83,6 +144,7 @@ header .meta{font-size:12px;opacity:.85;text-align:right}
 .kpi{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
 .kpi .val{font-size:22px;font-weight:700;color:var(--blue)}
 .kpi .lbl{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi.critical{background:#fde7e9;border-color:#d13438}.kpi.critical .val{color:#d13438}.kpi.critical .lbl{color:#d13438}
 .health-banner{border-radius:6px;padding:12px 20px;margin-bottom:16px;font-weight:600;font-size:15px;background:$overallBg;color:$overallFg}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{background:#f3f2f1;text-align:left;padding:8px 10px;font-weight:600;border-bottom:2px solid var(--border)}
@@ -124,7 +186,7 @@ tr:hover{background:#f3f2f1}
     <div class="kpi"><div class="val">$(if($pool){"$($pool.RemainingSize.TiB) TiB"}else{'N/A'})</div><div class="lbl">Pool Free</div></div>
     <div class="kpi"><div class="val">$($disks.Count)</div><div class="lbl">Physical Disks</div></div>
     <div class="kpi"><div class="val">$(@($vols | Where-Object { -not $_.IsInfrastructureVolume }).Count)</div><div class="lbl">Workload Volumes</div></div>
-    <div class="kpi"><div class="val">$(if($wf){"$($wf.ReserveStatus)"}else{'N/A'})</div><div class="lbl">Reserve Status</div></div>
+    <div class="kpi$(if($wf -and $wf.ReserveStatus -eq 'Critical'){' critical'}else{''})"><div class="val">$(if($wf){"$($wf.ReserveStatus)"}else{'N/A'})</div><div class="lbl">Reserve Status</div></div>
     <div class="kpi"><div class="val">$(if($wf){"$($wf.BlendedEfficiencyPercent)%"}else{'N/A'})</div><div class="lbl">Resiliency Efficiency</div></div>
   </div>
   $poolSummary
@@ -132,13 +194,30 @@ tr:hover{background:#f3f2f1}
 </div>
 
 <div class="section">
-  <h2>Capacity Waterfall</h2>
+  <h2>Capacity Model</h2>
+  <p style="margin-bottom:14px;font-size:12px;color:var(--muted)">Theoretical pipeline showing how raw storage should be accounted for under S2D best practices. Each stage represents a recommended deduction. See the Volume Map and Health Checks below for actual current state.</p>
   <div class="toggle-row">
     <span>Display unit:</span>
     <button class="toggle-btn" onclick="toggleUnit()">Toggle TiB / TB</button>
     <span id="unitLabel" style="font-weight:600">TiB</span>
   </div>
   <div class="chart-wrap"><canvas id="waterfallChart"></canvas></div>
+  <table style="margin-top:16px;font-size:13px;width:100%;border-collapse:collapse">
+    <thead><tr style="background:#f3f2f1"><th style="padding:7px 8px;text-align:left;width:28px"></th><th style="padding:7px 8px;text-align:left;width:24px">#</th><th style="padding:7px 8px;text-align:left">Stage</th><th style="padding:7px 8px;text-align:left">What it represents</th><th style="padding:7px 8px;text-align:right">Remaining</th></tr></thead>
+    <tbody>$wfDescRows</tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Pool Allocation Breakdown</h2>
+  <p style="margin-bottom:12px;font-size:12px;color:var(--muted)">Single bar showing how the raw storage pool is carved up across volumes. The dashed amber line marks the recommended rebuild reserve boundary. Any bar extending past the pool total is overcommit (shown in red).</p>
+  <div style="position:relative;height:90px"><canvas id="poolBreakdownChart"></canvas></div>
+</div>
+
+<div class="section">
+  <h2>Storage Pool Health</h2>
+  <p style="margin-bottom:16px;font-size:12px;color:var(--muted)">The bar represents the full pool. The amber zone on the right is the recommended rebuild reserve — S2D needs this space free to auto-repair after a drive failure. If workload volumes eat into that zone it turns red. Any portion beyond the pool total is overcommit.</p>
+  <div style="position:relative;height:130px"><canvas id="poolHealthChart"></canvas></div>
 </div>
 
 <div class="section">
@@ -212,6 +291,185 @@ function toggleUnit() {
   chart.options.scales.x.title.text = useTiB ? 'TiB' : 'TB';
   chart.update();
 }
+
+// Pool breakdown bar
+const poolTotalTB = $poolTotalTB;
+const reserveTB   = $reserveTB;
+const reserveLine = {
+  id: 'reserveLine',
+  afterDraw(chart) {
+    if (!poolTotalTB) return;
+    const ctx = chart.ctx;
+    const xScale = chart.scales.x;
+    // Pool boundary line (solid red if overcommitted, solid gray otherwise)
+    const boundaryX = xScale.getPixelForValue(poolTotalTB);
+    ctx.save();
+    ctx.strokeStyle = '#323130';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(boundaryX, chart.chartArea.top - 4);
+    ctx.lineTo(boundaryX, chart.chartArea.bottom + 4);
+    ctx.stroke();
+    ctx.fillStyle = '#323130';
+    ctx.font = '11px Segoe UI,Arial,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Pool total', boundaryX, chart.chartArea.top - 8);
+    // Reserve boundary line (dashed amber)
+    if (reserveTB > 0) {
+      const reserveX = xScale.getPixelForValue(reserveTB);
+      ctx.strokeStyle = '#e8a218';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(reserveX, chart.chartArea.top - 4);
+      ctx.lineTo(reserveX, chart.chartArea.bottom + 4);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#e8a218';
+      ctx.textAlign = 'center';
+      ctx.fillText('Reserve', reserveX, chart.chartArea.bottom + 14);
+    }
+    ctx.restore();
+  }
+};
+
+const pbCtx = document.getElementById('poolBreakdownChart').getContext('2d');
+new Chart(pbCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Pool'],
+    datasets: [$poolBarDatasets]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 14, font: { size: 11 } } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label } }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        beginAtZero: true,
+        title: { display: true, text: 'TB' },
+        grid: { color: '#edebe9' }
+      },
+      y: { stacked: true, display: false }
+    }
+  },
+  plugins: [reserveLine]
+});
+
+// ── Storage Pool Health bar ───────────────────────────────────────────────
+const ph = {
+  used:          $phUsed,
+  free:          $phFree,
+  reserveOk:     $phReserveOk,
+  reserveEaten:  $phReserveEaten,
+  overcommit:    $phOvercommit,
+  poolTotal:     $poolTotalTB,
+  reserveLine:   $phAvailLine
+};
+
+function makeHazard(ctx) {
+  const sz = 10;
+  const c  = document.createElement('canvas');
+  c.width  = sz; c.height = sz;
+  const p  = c.getContext('2d');
+  p.fillStyle = '#fde7e9';
+  p.fillRect(0, 0, sz, sz);
+  p.strokeStyle = '#d13438';
+  p.lineWidth = 2.5;
+  [[0, sz, sz, 0], [-sz * 0.5, sz * 0.5, sz * 0.5, -sz * 0.5], [sz * 0.5, sz * 1.5, sz * 1.5, sz * 0.5]].forEach(([x1,y1,x2,y2]) => {
+    p.beginPath(); p.moveTo(x1, y1); p.lineTo(x2, y2); p.stroke();
+  });
+  return ctx.createPattern(c, 'repeat');
+}
+
+const phBoundaryPlugin = {
+  id: 'phBoundary',
+  afterDraw(chart) {
+    const ctx = chart.ctx, x = chart.scales.x, top = chart.chartArea.top, bot = chart.chartArea.bottom;
+    const drawLine = (val, color, dash, label, labelPos) => {
+      const px = x.getPixelForValue(val);
+      ctx.save();
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      if (dash) ctx.setLineDash([5, 4]);
+      ctx.beginPath(); ctx.moveTo(px, top - 6); ctx.lineTo(px, bot + 6); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = color; ctx.font = 'bold 11px Segoe UI,Arial,sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(label, px, labelPos === 'top' ? top - 10 : bot + 18);
+      ctx.restore();
+    };
+    if (ph.reserveLine > 0) drawLine(ph.reserveLine, '#e8a218', true,  'Reserve starts', 'top');
+    if (ph.poolTotal  > 0) drawLine(ph.poolTotal,  '#323130', false, 'Pool total',     'top');
+  }
+};
+
+const phCtx = document.getElementById('poolHealthChart').getContext('2d');
+const hazard = makeHazard(phCtx);
+const phDatasets = [
+  { label: 'Volumes  ' + ph.used + ' TB',            data: [ph.used],         backgroundColor: '#0078d4', borderWidth: 0 },
+  { label: 'Free  '    + ph.free + ' TB',             data: [ph.free],         backgroundColor: '#dff6dd', borderWidth: 1, borderColor: '#107c10' },
+  { label: 'Reserve — OK  ' + ph.reserveOk + ' TB',  data: [ph.reserveOk],    backgroundColor: '#e8a218', borderWidth: 0 },
+  { label: 'Reserve — consumed  ' + ph.reserveEaten + ' TB', data: [ph.reserveEaten], backgroundColor: hazard, borderWidth: 0 },
+  { label: 'Overcommit  ' + ph.overcommit + ' TB',   data: [ph.overcommit],   backgroundColor: '#a80000', borderWidth: 0 }
+].filter(d => d.data[0] > 0);
+
+new Chart(phCtx, {
+  type: 'bar',
+  data: { labels: [''], datasets: phDatasets },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: 'y',
+    layout: { padding: { top: 28, bottom: 4, left: 4, right: 8 } },
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label } }
+    },
+    scales: {
+      x: {
+        stacked: true, beginAtZero: true,
+        max: Math.ceil(Math.max(ph.poolTotal, ph.used + ph.reserveEaten + ph.overcommit) * 1.08),
+        title: { display: true, text: 'TB' },
+        grid: { color: '#edebe9' }
+      },
+      y: { stacked: true, display: false }
+    }
+  },
+  plugins: [phBoundaryPlugin]
+});
+
+// Custom legend for pool health bar
+(function() {
+  const wrap = document.getElementById('poolHealthChart').parentElement;
+  const leg  = document.createElement('div');
+  leg.style.cssText = 'display:flex;flex-wrap:wrap;gap:16px;margin-top:8px;font-size:12px;align-items:center';
+  const items = [
+    { color: '#0078d4', label: 'Volumes used' },
+    { color: '#dff6dd', label: 'Free', border: '#107c10' },
+    { color: '#e8a218', label: 'Reserve — intact' },
+    { color: '#d13438', label: 'Reserve — consumed', hazard: true },
+    { color: '#a80000', label: 'Overcommit (past pool total)' }
+  ];
+  const phMap = { 'Volumes used': ph.used, 'Free': ph.free, 'Reserve — intact': ph.reserveOk, 'Reserve — consumed': ph.reserveEaten, 'Overcommit (past pool total)': ph.overcommit };
+  items.filter(i => phMap[i.label] > 0).forEach(i => {
+    const d = document.createElement('div');
+    d.style.cssText = 'display:flex;align-items:center;gap:6px';
+    const swatch = document.createElement('div');
+    swatch.style.cssText = 'width:14px;height:14px;border-radius:2px;flex-shrink:0';
+    if (i.hazard) {
+      swatch.style.background = 'repeating-linear-gradient(45deg,#fde7e9 0px,#fde7e9 4px,#d13438 4px,#d13438 7px)';
+    } else {
+      swatch.style.background = i.color;
+      if (i.border) swatch.style.border = '1px solid ' + i.border;
+    }
+    d.appendChild(swatch);
+    d.appendChild(Object.assign(document.createElement('span'), { textContent: i.label + '  ' + phMap[i.label] + ' TB' }));
+    leg.appendChild(d);
+  });
+  wrap.appendChild(leg);
+})();
 </script>
 </body>
 </html>

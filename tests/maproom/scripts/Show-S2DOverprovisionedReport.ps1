@@ -1,4 +1,3 @@
-using module 'E:\git\azurelocal-s2d-cartographer\S2DCartographer.psd1'
 <#
 .SYNOPSIS
     Generates an HTML report for a synthetic *overprovisioned* S2D cluster
@@ -46,6 +45,9 @@ Write-Host '====================================================================
 Write-Host ''
 
 Write-Host '[1/4] Importing S2DCartographer module...' -ForegroundColor DarkGray
+# Dot-source class files into caller scope so type literals are available at runtime
+. (Join-Path $repoRoot 'Modules\Classes\S2DCapacity.ps1')
+. (Join-Path $repoRoot 'Modules\Classes\S2DClasses.ps1')
 Import-Module (Join-Path $repoRoot 'S2DCartographer.psd1') -Force
 
 # -----------------------------------------------------------------------------
