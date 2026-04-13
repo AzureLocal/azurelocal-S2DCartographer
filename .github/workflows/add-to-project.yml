@@ -11,5 +11,5 @@ jobs:
     uses: AzureLocal/.github/.github/workflows/reusable-add-to-project.yml@main
     with:
       id-prefix: S2DCART
-      solution-option-id: ''
+      solution-option-id: 'b7769a8a'
     secrets: inherit
