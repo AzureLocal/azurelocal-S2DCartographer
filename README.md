@@ -6,7 +6,7 @@
 [![PSGallery](https://img.shields.io/powershellgallery/v/S2DCartographer?label=PSGallery&color=3b82f6)](https://www.powershellgallery.com/packages/S2DCartographer)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![PowerShell: 7.2+](https://img.shields.io/badge/PowerShell-7.2%2B-3b82f6)](https://github.com/PowerShell/PowerShell)
-[![CI](https://github.com/AzureLocal/azurelocal-S2DCartographer/actions/workflows/ci.yml/badge.svg)](https://github.com/AzureLocal/azurelocal-S2DCartographer/actions/workflows/ci.yml)
+[![CI](https://github.com/AzureLocal/azurelocal-s2d-cartographer/actions/workflows/ci.yml/badge.svg)](https://github.com/AzureLocal/azurelocal-s2d-cartographer/actions/workflows/ci.yml)
 
 Documentation: [azurelocal.cloud](https://azurelocal.cloud) | Solutions: [Azure Local Solutions](https://azurelocal.cloud)
 
@@ -97,13 +97,13 @@ Disconnect-S2DCluster
 
 ## Documentation
 
-Full documentation at **[azurelocal.github.io/azurelocal-S2DCartographer](https://azurelocal.github.io/azurelocal-S2DCartographer/)**
+Full documentation at **[azurelocal.github.io/azurelocal-s2d-cartographer](https://azurelocal.github.io/azurelocal-s2d-cartographer/)**
 
-- [Getting Started](https://azurelocal.github.io/azurelocal-S2DCartographer/getting-started/)
-- [Connecting to a Cluster](https://azurelocal.github.io/azurelocal-S2DCartographer/connecting/)
-- [Collectors Reference](https://azurelocal.github.io/azurelocal-S2DCartographer/collectors/)
-- [Capacity Math](https://azurelocal.github.io/azurelocal-S2DCartographer/capacity-math/)
-- [Troubleshooting](https://azurelocal.github.io/azurelocal-S2DCartographer/project/troubleshooting/)
+- [Getting Started](https://azurelocal.github.io/azurelocal-s2d-cartographer/getting-started/)
+- [Connecting to a Cluster](https://azurelocal.github.io/azurelocal-s2d-cartographer/connecting/)
+- [Collectors Reference](https://azurelocal.github.io/azurelocal-s2d-cartographer/collectors/)
+- [Capacity Math](https://azurelocal.github.io/azurelocal-s2d-cartographer/capacity-math/)
+- [Troubleshooting](https://azurelocal.github.io/azurelocal-s2d-cartographer/project/troubleshooting/)
 
 ---
 

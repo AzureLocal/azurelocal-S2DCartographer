@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
     Creates a new Operation TRAILHEAD field-testing cycle — milestone + 8 phase issues — in the
-    AzureLocal/azurelocal-S2DCartographer GitHub repository.
+    AzureLocal/azurelocal-s2d-cartographer GitHub repository.
 
 .DESCRIPTION
     Run this script to kick off a fresh field-testing cycle for a new S2DCartographer version.
@@ -71,7 +71,7 @@ Write-Host "Due         : $DueDate`n"
 # 1. Milestone
 # ---------------------------------------------------------------------------
 Write-Host "Creating milestone..." -ForegroundColor Yellow
-Invoke-Gh @("api", "repos/AzureLocal/azurelocal-S2DCartographer/milestones",
+Invoke-Gh @("api", "repos/AzureLocal/azurelocal-s2d-cartographer/milestones",
     "--method", "POST",
     "--field", "title=$milestoneTitle",
     "--field", "due_on=${DueDate}T00:00:00Z",
@@ -311,7 +311,7 @@ Run complete end-to-end scenarios and record outcomes.
 # ---------------------------------------------------------------------------
 # 3. Create issues and assign to milestone
 # ---------------------------------------------------------------------------
-$milestoneNumber = Invoke-Gh @("api", "repos/AzureLocal/azurelocal-S2DCartographer/milestones",
+$milestoneNumber = Invoke-Gh @("api", "repos/AzureLocal/azurelocal-s2d-cartographer/milestones",
     "--jq", ".[] | select(.title == `"$milestoneTitle`") | .number"
 ) 2>$null
 
@@ -322,11 +322,11 @@ foreach ($phase in $phases) {
     Write-Host "  Creating: $($phase.Title)" -ForegroundColor Gray
     Invoke-Gh @(
         "issue", "create",
-        "--repo", "AzureLocal/azurelocal-S2DCartographer",
+        "--repo", "AzureLocal/azurelocal-s2d-cartographer",
         "--title", $phase.Title,
         "--body", $body
     ) + $labelArgs | Out-Null
 }
 
 Write-Host "`nDone. Assign the issues to milestone '$milestoneTitle' in GitHub." -ForegroundColor Green
-Write-Host "Use: gh issue list --repo AzureLocal/azurelocal-S2DCartographer --label 'type/infra'" -ForegroundColor DarkGray
+Write-Host "Use: gh issue list --repo AzureLocal/azurelocal-s2d-cartographer --label 'type/infra'" -ForegroundColor DarkGray

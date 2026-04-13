@@ -36,7 +36,7 @@ function _TH-Append {
     _TH-Guard
     Add-Content -Path $env:TH_LOG_FILE -Value $Line
     if ($GitHubComment -and $env:TH_ISSUE_NUMBER) {
-        gh issue comment $env:TH_ISSUE_NUMBER --body $Line --repo "AzureLocal/azurelocal-S2DCartographer" 2>$null | Out-Null
+        gh issue comment $env:TH_ISSUE_NUMBER --body $Line --repo "AzureLocal/azurelocal-s2d-cartographer" 2>$null | Out-Null
     }
 }
 
@@ -144,7 +144,7 @@ $Notes
 
     if ($env:TH_ISSUE_NUMBER) {
         if ($Failed -eq 0) {
-            gh issue close $env:TH_ISSUE_NUMBER --comment "Run complete — $verdict. Log committed to repo." --repo "AzureLocal/azurelocal-S2DCartographer" 2>$null | Out-Null
+            gh issue close $env:TH_ISSUE_NUMBER --comment "Run complete — $verdict. Log committed to repo." --repo "AzureLocal/azurelocal-s2d-cartographer" 2>$null | Out-Null
             Write-Host "`n✅ Run closed. Issue #$($env:TH_ISSUE_NUMBER) closed." -ForegroundColor Green
         } else {
             Write-Host "`n⚠️  Run closed with failures. Issue #$($env:TH_ISSUE_NUMBER) left open." -ForegroundColor Yellow

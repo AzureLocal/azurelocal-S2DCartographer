@@ -32,7 +32,7 @@
     Which phase to start at (0–7). Purely informational in the log header.
 
 .PARAMETER RepoRoot
-    Path to the azurelocal-S2DCartographer repo root.
+    Path to the azurelocal-s2d-cartographer repo root.
 
 .EXAMPLE
     .\tests\trailhead\scripts\Start-TrailheadRun.ps1
@@ -139,7 +139,7 @@ $issueUrl = gh issue create `
     --body $issueBody `
     --label "type/infra" `
     --label "solution/s2dcartographer" `
-    --repo "AzureLocal/azurelocal-S2DCartographer" 2>&1
+    --repo "AzureLocal/azurelocal-s2d-cartographer" 2>&1
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Run-log issue: $issueUrl" -ForegroundColor Green

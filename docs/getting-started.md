@@ -22,8 +22,8 @@ Install-Module S2DCartographer -Scope CurrentUser
 ### From source
 
 ```powershell
-git clone https://github.com/AzureLocal/azurelocal-S2DCartographer.git
-Set-Location .\azurelocal-S2DCartographer
+git clone https://github.com/AzureLocal/azurelocal-s2d-cartographer.git
+Set-Location .\azurelocal-s2d-cartographer
 Import-Module .\S2DCartographer.psd1 -Force
 ```
 

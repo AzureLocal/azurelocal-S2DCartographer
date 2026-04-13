@@ -1,3 +1,3 @@
 # Changelog
 
-See [CHANGELOG.md](https://github.com/AzureLocal/azurelocal-S2DCartographer/blob/main/CHANGELOG.md) in the repository for the full changelog.
+See [CHANGELOG.md](https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/CHANGELOG.md) in the repository for the full changelog.

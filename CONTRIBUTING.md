@@ -70,7 +70,7 @@ This repository can be used as a standalone project without the parent multi-roo
 ### Open Only This Repository
 
 1. Open VS Code
-2. File > Open Workspace from File > select `azurelocal-S2DCartographer.code-workspace`
+2. File > Open Workspace from File > select `azurelocal-s2d-cartographer.code-workspace`
 3. All recommended extensions will be prompted for installation
 
 ### Prerequisites

@@ -10,8 +10,8 @@ S2DCartographer follows a milestone-based release cadence. Each milestone target
 
 | Issue | Feature |
 | --- | --- |
-| [#27](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/27) | **What-if capacity calculator** — model the impact of adding nodes or drives before committing hardware. Given a proposed change (e.g., +4 drives per node), compute the new waterfall stages, reserve status, and usable capacity delta. |
-| [#30](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/30) | **Documentation improvements** — individual collector reference pages, architecture diagram, connection guide, health checks reference, roadmap, troubleshooting, admonitions and Mermaid throughout. |
+| [#27](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/27) | **What-if capacity calculator** — model the impact of adding nodes or drives before committing hardware. Given a proposed change (e.g., +4 drives per node), compute the new waterfall stages, reserve status, and usable capacity delta. |
+| [#30](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/30) | **Documentation improvements** — individual collector reference pages, architecture diagram, connection guide, health checks reference, roadmap, troubleshooting, admonitions and Mermaid throughout. |
 
 ---
 
@@ -21,7 +21,7 @@ S2DCartographer follows a milestone-based release cadence. Each milestone target
 
 | Issue | Feature |
 | --- | --- |
-| [#25](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/25) | **OEM-specific disk enrichment** — extend `Get-S2DPhysicalDiskInventory` with vendor-specific data from Dell iDRAC, HPE iLO, Lenovo XClarity, and DataON interfaces. Surfaces drive bay location, predicted failure, and platform-level health alongside the standard S2D disk data. |
+| [#25](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/25) | **OEM-specific disk enrichment** — extend `Get-S2DPhysicalDiskInventory` with vendor-specific data from Dell iDRAC, HPE iLO, Lenovo XClarity, and DataON interfaces. Surfaces drive bay location, predicted failure, and platform-level health alongside the standard S2D disk data. |
 
 ---
 
@@ -31,7 +31,7 @@ S2DCartographer follows a milestone-based release cadence. Each milestone target
 
 | Issue | Feature |
 | --- | --- |
-| [#26](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/26) | **Snapshot storage and comparison** — persist cluster data snapshots to a local or network store, then compare any two snapshots to report capacity consumed, volumes added or removed, wear delta, and health regressions over time. |
+| [#26](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/26) | **Snapshot storage and comparison** — persist cluster data snapshots to a local or network store, then compare any two snapshots to report capacity consumed, volumes added or removed, wear delta, and health regressions over time. |
 
 ---
 
@@ -41,8 +41,8 @@ S2DCartographer follows a milestone-based release cadence. Each milestone target
 
 | Issue | Feature |
 | --- | --- |
-| [#28](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/28) | **Teams / Slack webhook alerts** — post health check failures and capacity threshold breaches as actionable cards to a Teams channel or Slack workspace. |
-| [#29](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/29) | **Azure Monitor integration** — emit S2D capacity and health metrics as custom Azure Monitor metrics. Enables alerting, dashboards, and workbook integration alongside the Azure portal's native HCI views. |
+| [#28](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/28) | **Teams / Slack webhook alerts** — post health check failures and capacity threshold breaches as actionable cards to a Teams channel or Slack workspace. |
+| [#29](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/29) | **Azure Monitor integration** — emit S2D capacity and health metrics as custom Azure Monitor metrics. Enables alerting, dashboards, and workbook integration alongside the Azure portal's native HCI views. |
 
 ---
 
@@ -58,4 +58,4 @@ S2DCartographer follows a milestone-based release cadence. Each milestone target
 
 ## Requesting Features
 
-Open an issue at [AzureLocal/azurelocal-S2DCartographer](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/new) using the feature request template. Include the cluster configuration context (node count, drive types, Azure Local version) — most useful features come from real deployment scenarios.
+Open an issue at [AzureLocal/azurelocal-s2d-cartographer](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/new) using the feature request template. Include the cluster configuration context (node count, drive types, Azure Local version) — most useful features come from real deployment scenarios.

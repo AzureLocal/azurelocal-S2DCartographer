@@ -133,7 +133,7 @@ The browser search order is:
 
 **Cause:** Usually caused by special characters (em-dashes, Unicode symbols) in cluster or volume names that weren't properly XML-escaped.
 
-**Fix:** This is a bug — please [open an issue](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/new?template=bug_report.yml) with the cluster name and affected volume names.
+**Fix:** This is a bug — please [open an issue](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/new?template=bug_report.yml) with the cluster name and affected volume names.
 
 ---
 

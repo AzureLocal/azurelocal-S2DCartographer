@@ -42,7 +42,7 @@ Every delivery milestone should have a corresponding **TRAILHEAD gate issue** be
 Use the `New-S2DCartographerFieldTestCycle.ps1` script to create a GitHub milestone and all 8 phase issues:
 
 ```powershell
-cd E:\git\azurelocal-S2DCartographer
+cd E:\git\azurelocal-s2d-cartographer
 .\tests\trailhead\scripts\New-S2DCartographerFieldTestCycle.ps1 `
     -Version "0.2.0" `
     -Environment "tplabs-clus01 (4-node Dell, TierPoint Labs)" `

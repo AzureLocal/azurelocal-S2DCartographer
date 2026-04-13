@@ -65,7 +65,7 @@ New-S2DReport -InputObject $data -Format Word `
     The Word document is built from scratch using Open XML — compatible with Word 2016+, LibreOffice, and Google Docs. Microsoft Office does not need to be installed on the machine running S2DCartographer.
 
 !!! warning "Garbled XML on open"
-    If the generated `.docx` opens with a repair prompt or shows garbled XML, this is usually caused by special characters (em-dashes, Unicode symbols) in cluster or volume names. Please [open an issue](https://github.com/AzureLocal/azurelocal-S2DCartographer/issues/new?template=bug_report.yml) with the cluster name and affected volume names.
+    If the generated `.docx` opens with a repair prompt or shows garbled XML, this is usually caused by special characters (em-dashes, Unicode symbols) in cluster or volume names. Please [open an issue](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/new?template=bug_report.yml) with the cluster name and affected volume names.
 
 ---
 

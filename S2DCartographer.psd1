@@ -43,9 +43,9 @@
                 'CapacityPlanning',
                 'PowerShell'
             )
-            ProjectUri   = 'https://github.com/AzureLocal/azurelocal-S2DCartographer'
-            LicenseUri   = 'https://github.com/AzureLocal/azurelocal-S2DCartographer/blob/main/LICENSE'
-            IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-S2DCartographer/main/docs/assets/images/s2dcartographer-icon.svg'
+            ProjectUri   = 'https://github.com/AzureLocal/azurelocal-s2d-cartographer'
+            LicenseUri   = 'https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/LICENSE'
+            IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-s2d-cartographer/main/docs/assets/images/s2dcartographer-icon.svg'
             ReleaseNotes = @'
 ## v1.0.2 — Fix WinRM authentication for non-domain and cross-domain environments
 
