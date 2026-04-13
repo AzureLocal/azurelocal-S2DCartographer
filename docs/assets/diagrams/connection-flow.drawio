@@ -1,0 +1,223 @@
+<mxfile host="Electron" modified="2026-04-13T18:00:00.000Z" agent="claude-code" version="25.0.0" type="device">
+  <diagram name="S2DCartographer Connection Flow" id="connection-flow">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="S2DCartographer — Connection &amp; Node Fan-Out Flow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#1F1F1F;" vertex="1" parent="1">
+          <mxGeometry x="300" y="20" width="800" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Start: Execution host -->
+        <mxCell id="start" value="Execution Host" style="ellipse;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#005A9E;fontColor=#FFFFFF;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="620" y="90" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Decision: execution mode -->
+        <mxCell id="d_mode" value="Execution mode?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF4CE;strokeColor=#DAA520;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="190" width="200" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Branch: -Local -->
+        <mxCell id="b_local" value="-Local switch&#10;(running on cluster node)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="310" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="b_local_action" value="Loopback CIM session&#10;No credentials, no WinRM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2E7D32;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="100" y="400" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="b_local_success" value="SUCCESS — collectors run locally" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;strokeColor=#1B5E20;fontColor=#FFFFFF;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="490" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Branch: Remote -->
+        <mxCell id="b_remote" value="-ClusterName (remote)&#10;or -CimSession provided" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#0078D4;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="600" y="310" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Decision: domain-joined? -->
+        <mxCell id="d_domain" value="Is exec host&#10;domain-joined to&#10;the cluster's domain?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF4CE;strokeColor=#DAA520;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="400" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Domain-joined path -->
+        <mxCell id="dj_auth" value="Kerberos auth&#10;-Authentication Negotiate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="880" y="410" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Workgroup path -->
+        <mxCell id="wg_auth" value="NTLM auth&#10;-Authentication Negotiate&#10;-Credential required" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="320" y="410" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="wg_hosts" value="TrustedHosts check:&#10;cluster FQDN must be listed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFECB3;strokeColor=#E65100;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="510" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Decision: trusted hosts ok? -->
+        <mxCell id="d_trusted" value="FQDN in&#10;TrustedHosts?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF4CE;strokeColor=#DAA520;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="330" y="620" width="180" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="err_8009" value="FAIL — 0x8009030e&#10;&#10;Access denied at WinRM handshake.&#10;Cluster FQDN not in TrustedHosts." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCDD2;strokeColor=#C62828;fontColor=#B71C1C;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="750" width="260" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="remediation_trusted" value="REMEDIATION&#10;Set-Item WSMan:\localhost\Client\TrustedHosts&#10;-Value &quot;cluster.fqdn,node1.fqdn,...&quot; -Force" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#0277BD;fontColor=#01579B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="870" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Short name resolution -->
+        <mxCell id="short_name" value="Short name supplied?&#10;(e.g. tplabs-clus01)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF4CE;strokeColor=#DAA520;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="620" y="620" width="200" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="resolve_fqdn" value="Resolve short name to FQDN:&#10;1. TrustedHosts match&#10;2. DNS GetHostEntry&#10;3. Short name pass-through" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#3F51B5;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="860" y="625" width="260" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Cluster connect -->
+        <mxCell id="cluster_connect" value="New-CimSession to cluster FQDN&#10;Connect-S2DCluster succeeds" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;strokeColor=#1B5E20;fontColor=#FFFFFF;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="770" width="240" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Node enumeration -->
+        <mxCell id="node_enum" value="Enumerate nodes via MSCluster_Node&#10;Store short names + resolve each to FQDN&#10;&#10;$Script:S2DSession.Nodes        (short names)&#10;$Script:S2DSession.NodeTargets  (FQDN map)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#0078D4;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="540" y="880" width="360" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Per-node fan-out starts -->
+        <mxCell id="per_node" value="Per-node collector fan-out&#10;Get-S2DPhysicalDiskInventory opens CIM session per node" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F57F17;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="1020" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="per_node_auth" value="Each per-node CIM session inherits&#10;Authentication + Credential from module session" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F57F17;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="520" y="1100" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Decision: node FQDNs in TrustedHosts? -->
+        <mxCell id="d_node_trusted" value="ALL node FQDNs&#10;in TrustedHosts?&#10;(workgroup only)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF4CE;strokeColor=#DAA520;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="580" y="1190" width="240" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Fail: partial success -->
+        <mxCell id="partial_fail" value="PARTIAL FAIL&#10;&#10;Cluster connect succeeded.&#10;Per-node CIM fails with 0x8009030e.&#10;Collectors return empty / partial data.&#10;&#10;This is the MOST confusing failure mode." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCDD2;strokeColor=#C62828;fontColor=#B71C1C;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1180" width="300" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="remediation_nodes" value="REMEDIATION&#10;Add EVERY node FQDN to TrustedHosts,&#10;not just the cluster FQDN:&#10;&#10;Set-Item WSMan:...\TrustedHosts -Value `&#10;  &quot;cluster.fqdn,node1.fqdn,node2.fqdn,...&quot;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5FE;strokeColor=#0277BD;fontColor=#01579B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1340" width="360" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- Success: full collection -->
+        <mxCell id="full_success" value="FULL SUCCESS&#10;All collectors return data from all nodes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;strokeColor=#1B5E20;fontColor=#FFFFFF;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="1340" width="300" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <mxCell id="e1" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="start" target="d_mode">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e2" value="-Local" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fontSize=12;fontStyle=1;" edge="1" parent="1" source="d_mode" target="b_local">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e3" value="Remote" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fontSize=12;fontStyle=1;" edge="1" parent="1" source="d_mode" target="b_remote">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e4" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="b_local" target="b_local_action">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e5" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="b_local_action" target="b_local_success">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e6" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="b_remote" target="d_domain">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e7" value="No (workgroup)" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fontSize=12;fontStyle=1;fontColor=#E65100;" edge="1" parent="1" source="d_domain" target="wg_auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e8" value="Yes" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fontSize=12;fontStyle=1;fontColor=#2E7D32;" edge="1" parent="1" source="d_domain" target="dj_auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e9" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="wg_auth" target="wg_hosts">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e10" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="wg_hosts" target="d_trusted">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e11" value="No" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fontSize=12;fontStyle=1;fontColor=#C62828;" edge="1" parent="1" source="d_trusted" target="err_8009">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e12" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#0277BD;" edge="1" parent="1" source="err_8009" target="remediation_trusted">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e13" value="Yes" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fontSize=12;fontStyle=1;fontColor=#2E7D32;" edge="1" parent="1" source="d_trusted" target="short_name">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e14" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="dj_auth" target="short_name">
+          <mxGeometry relative="1" as="geometry" />
+          <Array as="points">
+            <mxPoint x="980" y="620" />
+          </Array>
+        </mxCell>
+
+        <mxCell id="e15" value="Yes" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fontSize=12;fontStyle=1;" edge="1" parent="1" source="short_name" target="resolve_fqdn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e16" value="No&#10;(already FQDN)" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fontSize=12;" edge="1" parent="1" source="short_name" target="cluster_connect">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e17" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="resolve_fqdn" target="cluster_connect">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e18" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="cluster_connect" target="node_enum">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e19" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="node_enum" target="per_node">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e20" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="per_node" target="per_node_auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e21" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;" edge="1" parent="1" source="per_node_auth" target="d_node_trusted">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e22" value="No" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fontSize=12;fontStyle=1;fontColor=#C62828;" edge="1" parent="1" source="d_node_trusted" target="partial_fail">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e23" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;strokeColor=#0277BD;" edge="1" parent="1" source="partial_fail" target="remediation_nodes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e24" value="Yes" style="endArrow=classic;html=1;rounded=0;strokeWidth=2;fontSize=12;fontStyle=1;fontColor=#2E7D32;" edge="1" parent="1" source="d_node_trusted" target="full_success">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
