@@ -178,6 +178,7 @@ $healthChecks = @(
 # =============================================================================
 
 $synthetic = [ordered]@{
+    infrastructure_type = "azure_local"
     generatedAt         = $generatedAt
     generatedBy         = "New-S2DSyntheticCluster.ps1"
     company             = $iic.Company
@@ -196,6 +197,10 @@ $synthetic = [ordered]@{
         hardwareModel   = $iic.HardwareModel
         hardwareMfr     = $iic.HardwareMfr
     }
+    compliance          = [ordered]@{}
+    performance         = [ordered]@{}
+    user_journey        = [ordered]@{}
+    iac                 = [ordered]@{}
 }
 
 $outputDir = Split-Path $OutputPath -Parent

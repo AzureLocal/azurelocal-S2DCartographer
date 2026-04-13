@@ -38,6 +38,35 @@ jobs:
           Import-Module ./S2DCartographer.psd1 -Force
           Get-Module S2DCartographer | Format-List Name,Version,Path
 
+  platform-maproom:
+    name: Platform MAPROOM validation
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout platform repo
+        uses: actions/checkout@v4
+        with:
+          repository: AzureLocal/platform
+          path: _platform
+          ref: main
+
+      - name: Import AzureLocal.Maproom and validate fixtures
+        shell: pwsh
+        run: |
+          Import-Module .\_platform\testing\maproom\AzureLocal.Maproom.psd1 -Force
+          Get-Module AzureLocal.Maproom | Format-List Name, Version
+
+          $fixtures = Get-ChildItem -Path .\tests\maproom\Fixtures\*.json |
+              Where-Object { $_.Name -ne 'synthetic-cluster.json' }
+          foreach ($f in $fixtures) {
+            Write-Host "Validating $($f.Name)..."
+            Test-MaproomFixture -Path $f.FullName | Out-Null
+            Write-Host "  OK $($f.Name)"
+          }
+          Write-Host "All $($fixtures.Count) fixtures passed platform schema validation."
+
   pester-unit:
     runs-on: windows-latest
     steps:

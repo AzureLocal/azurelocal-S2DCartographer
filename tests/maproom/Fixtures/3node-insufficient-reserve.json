@@ -1,4 +1,5 @@
 {
+  "infrastructure_type": "azure_local",
   "s2dConfig": {
     "cacheModeNVMe": "WriteOnly",
     "cacheModeHDD": "WriteOnly",
@@ -507,7 +508,7 @@
   "clusterName": "mock-3n-noreserve",
   "_metadata": {
     "expectedThinOvercommit": false,
-    "description": "3-node, all pool space near-fully allocated — Critical reserve failure scenario",
+    "description": "3-node, all pool space near-fully allocated \u2014 Critical reserve failure scenario",
     "nodeCount": 3,
     "totalRawCapacityBytes": 46080000000000,
     "expectedReserveStatus": "Critical",
@@ -516,5 +517,9 @@
     "capacityDiskSizeBytes": 3840000000000,
     "fixture": "3node-insufficient-reserve",
     "cacheDisksPerNode": 2
-  }
+  },
+  "compliance": {},
+  "performance": {},
+  "user_journey": {},
+  "iac": {}
 }

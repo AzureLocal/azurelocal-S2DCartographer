@@ -1,4 +1,5 @@
 {
+  "infrastructure_type": "azure_local",
   "s2dConfig": {
     "cacheModeNVMe": "WriteOnly",
     "cacheModeHDD": "WriteOnly",
@@ -828,5 +829,9 @@
     "capacityDiskSizeBytes": 3840000000000,
     "fixture": "4node-mixed-resiliency",
     "cacheDisksPerNode": 2
-  }
+  },
+  "compliance": {},
+  "performance": {},
+  "user_journey": {},
+  "iac": {}
 }

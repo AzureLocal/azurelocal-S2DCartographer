@@ -1,4 +1,5 @@
 {
+  "infrastructure_type": "azure_local",
   "s2dConfig": {
     "cacheModeNVMe": "WriteOnly",
     "cacheModeHDD": "WriteOnly",
@@ -259,7 +260,7 @@
   "clusterName": "mock-2n-overcmt",
   "_metadata": {
     "expectedThinOvercommit": true,
-    "description": "2-node, thin volumes totaling 45TB provisioned against 30.72TB pool — overcommit scenario",
+    "description": "2-node, thin volumes totaling 45TB provisioned against 30.72TB pool \u2014 overcommit scenario",
     "nodeCount": 2,
     "totalRawCapacityBytes": 30720000000000,
     "totalProvisionedBytes": 45000000000000,
@@ -269,5 +270,9 @@
     "fixture": "2node-overcommitted",
     "cacheDisksPerNode": 0,
     "expectedReserveStatus": "Critical"
-  }
+  },
+  "compliance": {},
+  "performance": {},
+  "user_journey": {},
+  "iac": {}
 }
