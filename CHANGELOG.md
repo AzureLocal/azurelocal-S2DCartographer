@@ -8,6 +8,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.1.1] — 2026-04-13
+
+### Fixed
+
+- `Invoke-S2DCartographer` parameter splat to `Connect-S2DCluster` no longer forces the `ByName` parameter set when `-KeyVaultName` / `-SecretName` are passed. The Key Vault credential path now works end-to-end through the orchestrator. Previous behaviour threw `Credentials are required to connect to cluster` because `-Authentication` was always being splatted in (it lives in `ByName` only), forcing PowerShell parameter-set resolution to pick `ByName` and then demanding a `-Credential` that was never supplied. Closes [#39](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/39).
+- `Invoke-S2DCartographer` with `-Credential` + explicit `-Authentication Negotiate` no longer throws the same error. Parameter-set discipline is now strict across all four connection paths (`Local`, `ByCimSession`, `ByKeyVault`, `ByName`).
+
+### Added
+
+- `Connect-S2DCluster` and `Invoke-S2DCartographer` now accept a `-Username` parameter for the Key Vault credential path. Lets callers bypass the ContentType tag convention when the KV secret does not have that tag populated — common in infra automation pipelines that write the secret value without also writing the username to ContentType.
+
 ## [1.1.0] — 2026-04-13
 
 ### Added

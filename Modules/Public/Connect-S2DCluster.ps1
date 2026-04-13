@@ -44,6 +44,12 @@ function Connect-S2DCluster {
     .PARAMETER SecretName
         Name of the Key Vault secret containing the password (username encoded as secret tags or prefixed by convention).
 
+    .PARAMETER Username
+        Optional explicit username to pair with the Key Vault secret's password. When not provided,
+        the module reads the username from the secret's ContentType tag (convention: 'domain\user').
+        Use this when the secret does not have a ContentType populated — for example, when an
+        infrastructure automation pipeline writes the password without also setting the tag.
+
     .EXAMPLE
         Connect-S2DCluster -ClusterName "c01-prd-bal" -Credential (Get-Credential)
 
@@ -87,7 +93,10 @@ function Connect-S2DCluster {
         [string] $KeyVaultName,
 
         [Parameter(ParameterSetName = 'ByKeyVault', Mandatory)]
-        [string] $SecretName
+        [string] $SecretName,
+
+        [Parameter(ParameterSetName = 'ByKeyVault')]
+        [string] $Username
     )
 
     # Ensure not already connected
@@ -241,12 +250,18 @@ function Connect-S2DCluster {
                 throw "Az.KeyVault module is required for Key Vault credential retrieval. Install with: Install-Module Az.KeyVault"
             }
             $secret = Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName -AsPlainText -ErrorAction Stop
-            # Convention: secret value is the password; username stored in ContentType tag as "domain\user"
-            $username = (Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName).ContentType
-            if (-not $username) {
-                throw "Key Vault secret '$SecretName' does not have a username in ContentType. Set ContentType to 'domain\\username'."
+            # Resolve username in precedence order:
+            #   1. Explicit -Username parameter (most reliable — caller knows their environment)
+            #   2. The secret's ContentType tag, by convention "domain\user"
+            #   3. Fail with remediation guidance
+            $resolvedUser = $Username
+            if (-not $resolvedUser) {
+                $resolvedUser = (Get-AzKeyVaultSecret -VaultName $KeyVaultName -Name $SecretName).ContentType
             }
-            $kvCred = [PSCredential]::new($username, (ConvertTo-SecureString $secret -AsPlainText -Force))
+            if (-not $resolvedUser) {
+                throw "Username could not be resolved for Key Vault secret '$SecretName'. Pass -Username explicitly, or set the secret's ContentType tag to 'domain\\username'."
+            }
+            $kvCred = [PSCredential]::new($resolvedUser, (ConvertTo-SecureString $secret -AsPlainText -Force))
             $session = New-CimSession -ComputerName $ClusterName -Credential $kvCred -Authentication Negotiate -ErrorAction Stop
             $Script:S2DSession.CimSession     = $session
             $Script:S2DSession.ClusterName    = $ClusterName

@@ -42,6 +42,11 @@ function Invoke-S2DCartographer {
     .PARAMETER SecretName
         Key Vault secret name containing the cluster password.
 
+    .PARAMETER Username
+        Optional explicit username for the Key Vault credential path. When not provided,
+        the username is read from the secret's ContentType tag (convention: 'domain\user').
+        Use this when the secret does not have a ContentType populated.
+
     .PARAMETER OutputDirectory
         Root folder for all output files. Created if it does not exist.
         Defaults to C:\S2DCartographer.
@@ -104,6 +109,9 @@ function Invoke-S2DCartographer {
         [string] $SecretName,
 
         [Parameter()]
+        [string] $Username,
+
+        [Parameter()]
         [string] $OutputDirectory = 'C:\S2DCartographer',
 
         [Parameter()]
@@ -155,18 +163,38 @@ function Invoke-S2DCartographer {
         Write-Log "Parameters: Format=$($Format -join ',') IncludeDiagrams=$IncludeDiagrams SkipHealthChecks=$SkipHealthChecks"
 
         # ── Step 1: Connect ───────────────────────────────────────────────────
+        # Build splat for Connect-S2DCluster with strict parameter-set discipline.
+        # Each parameter set (ByName / ByKeyVault / ByCimSession / Local) accepts a
+        # disjoint set of parameters — splatting one set's parameters into another
+        # causes PowerShell parameter-set resolution to fall back to ByName, which
+        # then demands a -Credential that was never supplied and throws a misleading
+        # "Credentials are required" error. See issue #39.
         if (-not $Script:S2DSession.IsConnected) {
             $connectParams = @{}
-            if ($ClusterName)    { $connectParams['ClusterName']    = $ClusterName }
-            if ($Credential)     { $connectParams['Credential']     = $Credential }
-            if ($ClusterName)    { $connectParams['Authentication'] = $Authentication }
-            if ($CimSession)     { $connectParams['CimSession']     = $CimSession }
-            if ($Local)          { $connectParams['Local']          = $Local }
-            if ($KeyVaultName)   { $connectParams['KeyVaultName']   = $KeyVaultName }
-            if ($SecretName)     { $connectParams['SecretName']     = $SecretName }
+
+            if ($Local) {
+                $connectParams['Local'] = $Local
+            }
+            elseif ($CimSession) {
+                $connectParams['CimSession'] = $CimSession
+            }
+            elseif ($KeyVaultName -and $SecretName) {
+                # ByKeyVault — -Authentication is NOT a valid parameter here
+                $connectParams['ClusterName']  = $ClusterName
+                $connectParams['KeyVaultName'] = $KeyVaultName
+                $connectParams['SecretName']   = $SecretName
+                if ($Username) { $connectParams['Username'] = $Username }
+            }
+            else {
+                # ByName — requires ClusterName; Credential + Authentication valid
+                if ($ClusterName)  { $connectParams['ClusterName']    = $ClusterName }
+                if ($Credential)   { $connectParams['Credential']     = $Credential }
+                $connectParams['Authentication'] = $Authentication
+            }
 
             if ($PSCmdlet.ShouldProcess($ClusterName, 'Connect to S2D cluster')) {
                 Write-Log "Connecting to cluster: $ClusterName"
+                Write-Log "Splat keys passed to Connect-S2DCluster: $($connectParams.Keys -join ', ')"
                 Connect-S2DCluster @connectParams
                 $ownedSession = $true
                 Write-Log "Connected. Cluster=$($Script:S2DSession.ClusterName) Nodes=$($Script:S2DSession.Nodes.Count)"
