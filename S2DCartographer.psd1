@@ -1,6 +1,6 @@
 @{
     RootModule           = 'S2DCartographer.psm1'
-    ModuleVersion        = '1.0.7'
+    ModuleVersion        = '1.0.8'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
     Author               = 'Azure Local Cloud'
@@ -47,6 +47,11 @@
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-s2d-cartographer/main/docs/assets/images/s2dcartographer-icon.svg'
             ReleaseNotes = @'
+## v1.0.8 — Fix Get-S2DHealthStatus crash on live clusters
+
+### Fixed
+- `Get-S2DHealthStatus` now uses `ArrayList` instead of `Generic.List[S2DHealthCheck]`. PowerShell classes dot-sourced in a module fail to resolve as generic type parameters at runtime, causing `.Add()` to throw on live clusters.
+
 ## v1.0.7 — HTML report: pool health bar, capacity model, stage descriptions
 
 ### Added

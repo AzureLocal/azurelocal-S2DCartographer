@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.0.8] — 2026-04-13
+
+### Fixed
+
+- `Get-S2DHealthStatus` — replaced `[System.Collections.Generic.List[S2DHealthCheck]]` with `[System.Collections.ArrayList]`. PowerShell classes defined via dot-sourcing can fail to resolve as generic type parameters at runtime, causing `.Add()` to throw "Cannot find an overload for 'Add' and the argument count: '1'" when running against a live cluster.
+
 ## [1.0.7] — 2026-04-13
 
 ### Added

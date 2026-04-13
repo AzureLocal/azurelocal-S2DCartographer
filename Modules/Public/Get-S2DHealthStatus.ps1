@@ -62,7 +62,7 @@ function Get-S2DHealthStatus {
         $hc
     }
 
-    $checks = [System.Collections.Generic.List[S2DHealthCheck]]::new()
+    $checks = [System.Collections.ArrayList]::new()
 
     # ── Check 1: Reserve adequacy ─────────────────────────────────────────────
     $check1 = if ($waterfall) {
