@@ -1,55 +1,59 @@
 # Roadmap
 
-S2DCartographer follows a milestone-based release cadence. Each milestone targets a single focused capability area. The current stable release is **v1.0.0**.
+S2DCartographer follows a milestone-based release cadence. Each milestone targets a focused capability area. The current stable release is **v1.2.0**.
+
+Live status of everything below is tracked on [GitHub Milestones](https://github.com/AzureLocal/azurelocal-s2d-cartographer/milestones).
 
 ---
 
-## v1.1.0 — What-If Planning
+## v1.3.0 — What-If Planning
 
 *Target: next minor release*
 
 | Issue | Feature |
 | --- | --- |
-| [#27](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/27) | **What-if capacity calculator** — model the impact of adding nodes or drives before committing hardware. Given a proposed change (e.g., +4 drives per node), compute the new waterfall stages, reserve status, and usable capacity delta. |
-| [#30](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/30) | **Documentation improvements** — individual collector reference pages, architecture diagram, connection guide, health checks reference, roadmap, troubleshooting, admonitions and Mermaid throughout. |
+| [#27](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/27) | **What-if capacity calculator** — model the impact of adding nodes or drives before committing hardware. Given a proposed change (e.g., +4 drives per node), compute the new waterfall stages, reserve status, and usable capacity delta. Accepts a JSON snapshot from v1.2.0 as baseline input so modeling does not require a live cluster. |
 
 ---
 
-## v1.2.0 — OEM Disk Enrichment
+## Future Roadmap
 
-*Target: after v1.1.0*
+*Tracked but not scheduled to a specific release.*
 
 | Issue | Feature |
 | --- | --- |
-| [#25](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/25) | **OEM-specific disk enrichment** — extend `Get-S2DPhysicalDiskInventory` with vendor-specific data from Dell iDRAC, HPE iLO, Lenovo XClarity, and DataON interfaces. Surfaces drive bay location, predicted failure, and platform-level health alongside the standard S2D disk data. |
+| [#25](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/25) | **OEM-specific disk enrichment** — extend `Get-S2DPhysicalDiskInventory` with vendor-specific data from Dell iDRAC, HPE iLO, Lenovo XClarity, and DataON interfaces. Surfaces drive bay location, predicted failure, and platform-level health alongside the standard S2D disk data. Pending a validation environment across all four vendors. |
 
 ---
 
-## v1.3.0 — Historical Trending
+## v2.0.0 — Reserved for breaking changes
 
-*Target: after v1.2.0*
-
-| Issue | Feature |
-| --- | --- |
-| [#26](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/26) | **Snapshot storage and comparison** — persist cluster data snapshots to a local or network store, then compare any two snapshots to report capacity consumed, volumes added or removed, wear delta, and health regressions over time. |
+*No issues currently assigned. Held for any future change that requires a major version bump (removed cmdlets, renamed parameters, changed output object shape).*
 
 ---
 
-## v2.0.0 — Cloud Integration
+## Explicitly out of scope
 
-*Target: future major release — no committed timeline*
+The following ideas were considered and rejected because they do not fit the tool's shape. S2DCartographer is a **point-in-time audit and reporting tool** — run once, produce a report, exit. Features that require a continuously-running service belong elsewhere.
 
-| Issue | Feature |
+| Issue | Decision |
 | --- | --- |
-| [#28](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/28) | **Teams / Slack webhook alerts** — post health check failures and capacity threshold breaches as actionable cards to a Teams channel or Slack workspace. |
-| [#29](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/29) | **Azure Monitor integration** — emit S2D capacity and health metrics as custom Azure Monitor metrics. Enables alerting, dashboards, and workbook integration alongside the Azure portal's native HCI views. |
+| [#26](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/26) | Historical trending with time-series charts and retention — closed as out-of-scope. Continuous trending belongs in Azure Monitor. A narrow "diff two JSON snapshots" use case may be filed as a separate issue later. |
+| [#28](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/28) | Teams / Slack webhook alerts — closed as out-of-scope. A webhook alert only fires when the module is run; for real proactive alerting, customers should use Azure Monitor Alert Rules against the cluster's native telemetry. |
+| [#29](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/29) | Azure Monitor integration — closed as out-of-scope. Azure Monitor already instruments Azure Local clusters natively; there is no reason for this module to become a data ingestion pipeline. |
 
 ---
 
 ## Completed
 
-| Version | Summary |
+| Version | Highlights |
 | --- | --- |
+| **v1.2.0** | JSON snapshot export (SchemaVersion 1.0), opt-in CSV per-collector tables, pool-member disk filter (`IsPoolMember`) across reports and health checks, Surveyor cross-link in docs, `-IncludeNonPoolDisks` switch. Closes [#35](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/35), [#40](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/40), [#41](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/41), [#42](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/42). |
+| **v1.1.1** | Fix parameter-set splat in `Invoke-S2DCartographer` that broke `-KeyVaultName` and explicit `-Authentication`; added `-Username` parameter for Key Vault secrets without a ContentType tag. Closes [#39](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/39). |
+| **v1.1.0** | Default `-Format` changed to `All`; `ImportExcel` bundled as a `RequiredModules` dependency; per-run output folder structure `<OutputDir>\<ClusterName>\<yyyyMMdd-HHmm>\`; session log file; thicker pool allocation breakdown bar; full authentication / remoting / node fan-out docs with flowchart diagram. Closes [#34](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/34), [#36](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/36), [#37](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/37), [#38](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/38). |
+| **v1.0.8** | Fix `Get-S2DHealthStatus` crash on live clusters — replaced `Generic.List[S2DHealthCheck]` with a plain array to work around PowerShell class type resolution on dot-sourced classes. |
+| **v1.0.7** | Storage Pool Health bar (WAC-style), Pool Allocation Breakdown bar, Capacity Model stage descriptions, Critical Reserve Status KPI. |
+| **v1.0.2 – v1.0.6** | Workgroup / non-domain-joined connectivity fixes — WinRM authentication inheritance, TrustedHosts short-name resolution, per-node CIM fan-out FQDN resolution, pre-flight credential validation. |
 | **v1.0.0** | Full pipeline: all 6 collectors, HTML/Word/PDF/Excel reports, 6 SVG diagram types, `Invoke-S2DCartographer` orchestrator, 119 Pester tests, MkDocs documentation site. |
 | **v0.1.0-preview2** | Bug fix: non-domain-joined connectivity (`Connect-S2DCluster`). |
 | **v0.1.0-preview1** | Foundation: `S2DCapacity` class, `ConvertTo-S2DCapacity`, `Connect-S2DCluster`, `Get-S2DPhysicalDiskInventory`. |
