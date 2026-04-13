@@ -8,6 +8,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-04-13
+
+### Added
+
+- **What-if capacity modeling** (`Invoke-S2DCapacityWhatIf`) — model the capacity impact of adding nodes, adding disks per node, replacing disks, or changing resiliency without touching the live cluster. Accepts a JSON snapshot (SchemaVersion 1.0), a piped `S2DClusterData` object, or a live cluster name. Returns an `S2DWhatIfResult` object containing both the baseline and projected `S2DCapacityWaterfall` plus a per-stage delta table with TiB and TB values. Optionally generates HTML and JSON reports. Closes [#27](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/27).
+- **What-if HTML report** (`Export-S2DWhatIfHtmlReport`) — self-contained HTML file with side-by-side Chart.js horizontal bar charts (baseline left, projected right), a KPI summary row (baseline usable, projected usable, delta, reserve statuses, efficiency percentages), scenario badge, and a color-coded stage-by-stage delta table.
+- **What-if JSON output** (`Export-S2DWhatIfJsonReport`) — structured JSON file (SchemaVersion 1.0, Type S2DWhatIfResult) with flat waterfall stage arrays and all delta values for downstream consumption.
+- **`Invoke-S2DWaterfallCalculation`** private pure function — all 8-stage waterfall math extracted from `Get-S2DCapacityWaterfall` into a session-independent function callable with explicit numeric inputs. No CIM queries, no module state. `Get-S2DCapacityWaterfall` is now a thin wrapper that extracts session inputs and calls this function.
+- **Thin provisioning risk check update** — `Get-S2DHealthStatus` check 6 (ThinOvercommit) now evaluates maximum potential pool footprint (`Size × NumberOfDataCopies` for each thin-provisioned volume) against pool total capacity at two thresholds: Warn at 80%, Critical at 100%. Previously only fired when the current provisioned overcommit ratio exceeded 1.0 — too late to catch risk before it materialises. Closes [#44](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/44).
+- **Check 11: ThinReserveRisk** — new health check evaluates whether maximum thin volume growth (potential footprint minus current footprint) would consume the recommended rebuild reserve space. Warns when growth headroom could exhaust reserve; Critical when pool free space after maximum growth is negative. Closes [#44](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/44).
+- `S2DVolume.ThinGrowthHeadroom` — new `S2DCapacity` property populated by `Get-S2DVolumeMap` for thin-provisioned volumes: `Size - AllocatedSize` (remaining write headroom before pool footprint equals provisioned size).
+- `S2DVolume.MaxPotentialFootprint` — new `S2DCapacity` property: `Size × NumberOfDataCopies` (maximum pool space consumed if the volume is written completely full under current resiliency). `$null` for fixed-provisioned volumes.
+- **Thin Provision Risk KPI** in HTML executive summary — color-coded card showing `max potential footprint / pool total` percentage; amber at ≥80%, red at ≥100%.
+- **Growth Headroom and Max Potential Footprint columns** in the Volume Map table in HTML, Word, Excel, and CSV reports. Fixed-provisioned volumes show "—" in these columns.
+- `docs/what-if.md` — new documentation page covering all scenario parameters, output object shape, worked examples for every scenario type, composite scenarios, pipeline input, and modeling assumptions.
+
+### Changed
+
+- `Get-S2DCapacityWaterfall` is now a thin wrapper around `Invoke-S2DWaterfallCalculation`. Existing callers are unaffected — public API is unchanged.
+- `Get-S2DHealthStatus` now returns 11 health check objects (previously 10).
+
 ## [1.2.1] — 2026-04-13
 
 ### Fixed

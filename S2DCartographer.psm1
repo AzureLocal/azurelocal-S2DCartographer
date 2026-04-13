@@ -49,6 +49,8 @@ Export-ModuleMember -Function @(
     'ConvertTo-S2DCapacity',
     # Orchestrator
     'Invoke-S2DCartographer',
+    # What-if modeling
+    'Invoke-S2DCapacityWhatIf',
     # Output
     'New-S2DReport',
     'New-S2DDiagram'

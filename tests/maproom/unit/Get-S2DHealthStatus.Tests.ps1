@@ -23,6 +23,7 @@ Describe 'Get-S2DHealthStatus' {
                         Role              = 'Capacity'
                         SizeBytes         = [int64]3840000000000
                         WearPercentage    = 10
+                        IsPoolMember      = $true
                     }
                 }
             })
@@ -43,6 +44,8 @@ Describe 'Get-S2DHealthStatus' {
             $vol1.HealthStatus           = 'Healthy'
             $vol1.OperationalStatus      = 'OK'
             $vol1.IsInfrastructureVolume = $false
+            $vol1.ProvisioningType       = 'Fixed'
+            $vol1.NumberOfDataCopies     = 3
             $vol1.EfficiencyPercent      = 33.3
             $vol1.Size                   = [S2DCapacity]::new([int64]3000000000000)
             $vol1.FootprintOnPool        = [S2DCapacity]::new([int64]9000000000000)
@@ -89,15 +92,15 @@ Describe 'Get-S2DHealthStatus' {
     }
 
     Context 'Output shape' {
-        It 'returns exactly 10 S2DHealthCheck objects on a healthy cluster' {
+        It 'returns exactly 11 S2DHealthCheck objects on a healthy cluster' {
             InModuleScope S2DCartographer {
                 $result = Get-S2DHealthStatus
-                $result.Count | Should -Be 10
+                $result.Count | Should -Be 11
                 $result | ForEach-Object { $_.GetType().Name | Should -Be 'S2DHealthCheck' }
             }
         }
 
-        It 'all 10 checks contain non-empty CheckName, Severity, Status, and Details' {
+        It 'all 11 checks contain non-empty CheckName, Severity, Status, and Details' {
             InModuleScope S2DCartographer {
                 $result = Get-S2DHealthStatus
                 $result | ForEach-Object {
@@ -272,6 +275,92 @@ Describe 'Get-S2DHealthStatus' {
                 $Script:S2DSession.CollectedData['CacheTier'].CacheState = 'Degraded'
                 Get-S2DHealthStatus | Out-Null
                 $Script:S2DSession.CollectedData['OverallHealth'] | Should -Be 'Warning'
+            }
+        }
+    }
+
+    Context 'ThinOvercommit check' {
+        It 'passes on fixed-only cluster' {
+            InModuleScope S2DCartographer {
+                # vol1 is Fixed in the default fixture
+                ($result = Get-S2DHealthStatus)
+                ($result | Where-Object CheckName -eq 'ThinOvercommit').Status | Should -Be 'Pass'
+            }
+        }
+
+        It 'warns when thin max potential footprint exceeds 80% of pool total' {
+            InModuleScope S2DCartographer {
+                # Thin volume: Size=30TB, 3 copies → max footprint=90TB, pool=60.82TB → 148% > 80%
+                $thinVol = [S2DVolume]::new()
+                $thinVol.FriendlyName           = 'ThinStorage_1'
+                $thinVol.IsInfrastructureVolume = $false
+                $thinVol.ProvisioningType       = 'Thin'
+                $thinVol.NumberOfDataCopies     = 3
+                $thinVol.HealthStatus           = 'Healthy'
+                $thinVol.OperationalStatus      = 'OK'
+                $thinVol.Size                   = [S2DCapacity]::new([int64]30000000000000)   # 30 TB
+                $thinVol.FootprintOnPool        = [S2DCapacity]::new([int64]3000000000000)    # 3 TB current
+                $thinVol.AllocatedSize          = [S2DCapacity]::new([int64]1000000000000)
+                $thinVol.MaxPotentialFootprint  = [S2DCapacity]::new([int64]90000000000000)   # 90 TB = 30×3
+                $thinVol.ThinGrowthHeadroom     = [S2DCapacity]::new([int64]29000000000000)
+
+                $Script:S2DSession.CollectedData['Volumes'] = @($thinVol, $Script:S2DSession.CollectedData['Volumes'][1])
+                $result = Get-S2DHealthStatus
+                ($result | Where-Object CheckName -eq 'ThinOvercommit').Status | Should -BeIn 'Warn','Fail'
+            }
+        }
+
+        It 'fails when thin max potential footprint exceeds pool total' {
+            InModuleScope S2DCartographer {
+                # Thin volume: Size=25TB, 3 copies → max footprint=75TB > pool 60.82TB
+                $thinVol = [S2DVolume]::new()
+                $thinVol.FriendlyName           = 'ThinStorage_1'
+                $thinVol.IsInfrastructureVolume = $false
+                $thinVol.ProvisioningType       = 'Thin'
+                $thinVol.NumberOfDataCopies     = 3
+                $thinVol.HealthStatus           = 'Healthy'
+                $thinVol.OperationalStatus      = 'OK'
+                $thinVol.Size                   = [S2DCapacity]::new([int64]25000000000000)
+                $thinVol.FootprintOnPool        = [S2DCapacity]::new([int64]3000000000000)
+                $thinVol.AllocatedSize          = [S2DCapacity]::new([int64]1000000000000)
+                $thinVol.MaxPotentialFootprint  = [S2DCapacity]::new([int64]75000000000000)   # 75TB > 60.82TB pool
+                $thinVol.ThinGrowthHeadroom     = [S2DCapacity]::new([int64]24000000000000)
+
+                $Script:S2DSession.CollectedData['Volumes'] = @($thinVol, $Script:S2DSession.CollectedData['Volumes'][1])
+                $result = Get-S2DHealthStatus
+                ($result | Where-Object CheckName -eq 'ThinOvercommit').Status | Should -Be 'Fail'
+            }
+        }
+    }
+
+    Context 'ThinReserveRisk check' {
+        It 'passes on fixed-only cluster' {
+            InModuleScope S2DCartographer {
+                ($result = Get-S2DHealthStatus)
+                ($result | Where-Object CheckName -eq 'ThinReserveRisk').Status | Should -Be 'Pass'
+            }
+        }
+
+        It 'warns when thin growth would consume the rebuild reserve' {
+            InModuleScope S2DCartographer {
+                # Pool free=40.82TB, reserve=15.36TB. Thin vol: max footprint 35TB, current 3TB → growth=32TB
+                # Free after max growth = 40.82 - 32 = 8.82TB < reserve 15.36TB → Warn
+                $thinVol = [S2DVolume]::new()
+                $thinVol.FriendlyName           = 'ThinStorage_1'
+                $thinVol.IsInfrastructureVolume = $false
+                $thinVol.ProvisioningType       = 'Thin'
+                $thinVol.NumberOfDataCopies     = 3
+                $thinVol.HealthStatus           = 'Healthy'
+                $thinVol.OperationalStatus      = 'OK'
+                $thinVol.Size                   = [S2DCapacity]::new([int64]11000000000000)   # 11 TB
+                $thinVol.FootprintOnPool        = [S2DCapacity]::new([int64]3000000000000)    # 3 TB current
+                $thinVol.AllocatedSize          = [S2DCapacity]::new([int64]1000000000000)
+                $thinVol.MaxPotentialFootprint  = [S2DCapacity]::new([int64]33000000000000)   # 33TB max
+                $thinVol.ThinGrowthHeadroom     = [S2DCapacity]::new([int64]10000000000000)
+
+                $Script:S2DSession.CollectedData['Volumes'] = @($thinVol, $Script:S2DSession.CollectedData['Volumes'][1])
+                $result = Get-S2DHealthStatus
+                ($result | Where-Object CheckName -eq 'ThinReserveRisk').Status | Should -BeIn 'Warn','Fail'
             }
         }
     }

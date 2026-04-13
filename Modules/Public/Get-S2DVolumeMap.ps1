@@ -103,6 +103,14 @@ function Get-S2DVolumeMap {
         $vol.IsInfrastructureVolume = $isInfra
         $vol.EfficiencyPercent      = $effResult.EfficiencyPercent
         $vol.OvercommitRatio        = $overcommitRatio
+
+        # Thin provisioning growth metrics — only meaningful for thin volumes
+        if ($provType -eq 'Thin' -and $sizeBytes -gt 0) {
+            $headroomBytes = $sizeBytes - $allocatedBytes
+            $vol.ThinGrowthHeadroom    = if ($headroomBytes -gt 0) { [S2DCapacity]::new($headroomBytes) } else { [S2DCapacity]::new([int64]0) }
+            $vol.MaxPotentialFootprint = [S2DCapacity]::new($sizeBytes * $dataCopies)
+        }
+
         $vol
     })
 

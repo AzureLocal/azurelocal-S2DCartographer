@@ -4,9 +4,9 @@ function Get-S2DHealthStatus {
         Runs all S2D health checks and returns pass/warn/fail results with severity.
 
     .DESCRIPTION
-        Executes 10 health checks covering reserve adequacy, disk symmetry, volume health,
+        Executes 11 health checks covering reserve adequacy, disk symmetry, volume health,
         disk health, NVMe wear, thin overcommit, firmware consistency, rebuild capacity,
-        infrastructure volume presence, and cache tier health.
+        infrastructure volume presence, cache tier health, and thin provisioning reserve risk.
 
         Uses already-collected data from the session cache where available. Run the
         collector cmdlets first for best results, or they will be invoked automatically.
@@ -168,15 +168,39 @@ function Get-S2DHealthStatus {
     $checks += $check5
 
     # ── Check 6: Thin overcommit ──────────────────────────────────────────────
+    # Tiered check: max potential footprint (if all thin volumes were fully written)
+    # vs pool total. Fires earlier than a simple overcommit ratio check.
+    $thinWorkloadVols = @($volumes | Where-Object { -not $_.IsInfrastructureVolume -and $_.ProvisioningType -eq 'Thin' })
+    $maxPotentialFootprintBytes = [int64](
+        ($thinWorkloadVols | ForEach-Object {
+            if ($_.MaxPotentialFootprint) { $_.MaxPotentialFootprint.Bytes } else { [int64]0 }
+        } | Measure-Object -Sum).Sum
+    )
+    $poolTotalBytes  = if ($pool -and $pool.TotalSize) { $pool.TotalSize.Bytes } else { [int64]0 }
+    $potentialRatio  = if ($poolTotalBytes -gt 0 -and $maxPotentialFootprintBytes -gt 0) {
+        [math]::Round($maxPotentialFootprintBytes / $poolTotalBytes, 3)
+    } else { 0.0 }
     $isOvercommitted = $pool -and $pool.OvercommitRatio -gt 1.0
-    $check6 = if (-not $isOvercommitted) {
-        New-HealthCheck 'ThinOvercommit' 'Warning' 'Pass' `
-            "Pool is not overcommitted. Overcommit ratio: $(if($pool){"$($pool.OvercommitRatio)x"} else {"N/A"})." `
-            "No action required."
-    } else {
+
+    $check6 = if ($potentialRatio -gt 1.0) {
+        New-HealthCheck 'ThinOvercommit' 'Critical' 'Fail' `
+            "Thin volume max potential footprint ($([math]::Round($maxPotentialFootprintBytes/1TB,2)) TB, $([math]::Round($potentialRatio*100,1))% of pool) exceeds pool total ($([math]::Round($poolTotalBytes/1TB,2)) TB). Pool will be exhausted if all thin volumes write to their provisioned size." `
+            "Reduce provisioned sizes of thin volumes, convert high-growth volumes to fixed provisioning, or add capacity drives."
+    } elseif ($potentialRatio -gt 0.8) {
+        New-HealthCheck 'ThinOvercommit' 'Warning' 'Warn' `
+            "Thin volume max potential footprint is $([math]::Round($potentialRatio*100,1))% of pool total ($([math]::Round($maxPotentialFootprintBytes/1TB,2)) TB of $([math]::Round($poolTotalBytes/1TB,2)) TB). Heavy write workloads could exhaust the pool." `
+            "Monitor thin volume growth. Consider reducing provisioned sizes or converting high-growth volumes to fixed provisioning."
+    } elseif ($isOvercommitted) {
         New-HealthCheck 'ThinOvercommit' 'Warning' 'Warn' `
             "Pool is overcommitted. Provisioned: $($pool.ProvisionedSize.TiB) TiB, Pool total: $($pool.TotalSize.TiB) TiB (ratio: $($pool.OvercommitRatio)x)." `
             "Monitor actual data growth. Thin-provisioned volumes can run out of pool space unexpectedly. Add capacity or reduce provisioned sizes."
+    } else {
+        $thinDesc = if ($thinWorkloadVols.Count -gt 0) {
+            "$($thinWorkloadVols.Count) thin workload volume(s). Max potential footprint: $([math]::Round($maxPotentialFootprintBytes/1TB,2)) TB ($([math]::Round($potentialRatio*100,1))% of pool). Overcommit ratio: $(if($pool){"$($pool.OvercommitRatio)x"} else {"N/A"})."
+        } else {
+            "No thin-provisioned workload volumes. Overcommit ratio: $(if($pool){"$($pool.OvercommitRatio)x"} else {"N/A"})."
+        }
+        New-HealthCheck 'ThinOvercommit' 'Warning' 'Pass' $thinDesc "No action required."
     }
     $checks += $check6
 
@@ -282,6 +306,43 @@ function Get-S2DHealthStatus {
             "Investigate cache tier with Get-ClusterS2D and Get-PhysicalDisk."
     }
     $checks += $check10
+
+    # ── Check 11: Thin provisioning reserve risk ──────────────────────────────
+    # Asks: if all thin volumes grew to their maximum provisioned size, would the
+    # rebuild reserve still be intact? Pool.RemainingSize looks healthy today but
+    # uncommitted thin growth can silently consume that space.
+    $currentThinFootprintBytes = [int64](
+        ($thinWorkloadVols | ForEach-Object {
+            if ($_.FootprintOnPool) { $_.FootprintOnPool.Bytes } else { [int64]0 }
+        } | Measure-Object -Sum).Sum
+    )
+    $uncommittedGrowthBytes = [math]::Max([int64]0, $maxPotentialFootprintBytes - $currentThinFootprintBytes)
+    $poolFreeBytes          = if ($pool -and $pool.RemainingSize) { $pool.RemainingSize.Bytes } else { [int64]0 }
+    $reserveRecommBytes     = if ($waterfall -and $waterfall.ReserveRecommended) { $waterfall.ReserveRecommended.Bytes } else { [int64]0 }
+    $freeAfterMaxGrowth     = $poolFreeBytes - $uncommittedGrowthBytes
+
+    $check11 = if ($thinWorkloadVols.Count -eq 0) {
+        New-HealthCheck 'ThinReserveRisk' 'Warning' 'Pass' `
+            "No thin-provisioned workload volumes. Rebuild reserve is not at risk from thin volume growth." `
+            "No action required."
+    } elseif ($uncommittedGrowthBytes -eq 0) {
+        New-HealthCheck 'ThinReserveRisk' 'Warning' 'Pass' `
+            "Thin volumes have no uncommitted growth headroom — already at maximum footprint." `
+            "No action required."
+    } elseif ($freeAfterMaxGrowth -lt 0) {
+        New-HealthCheck 'ThinReserveRisk' 'Critical' 'Fail' `
+            "If all thin volumes write to full provisioned size, pool free space will be exhausted. Current free: $([math]::Round($poolFreeBytes/1TB,2)) TB. Uncommitted thin growth: $([math]::Round($uncommittedGrowthBytes/1TB,2)) TB." `
+            "Reduce thin volume provisioned sizes, convert to fixed provisioning, or add capacity drives immediately."
+    } elseif ($freeAfterMaxGrowth -lt $reserveRecommBytes) {
+        New-HealthCheck 'ThinReserveRisk' 'Warning' 'Warn' `
+            "If all thin volumes write to full provisioned size, the rebuild reserve will be consumed. Free after max growth: $([math]::Round($freeAfterMaxGrowth/1TB,2)) TB vs. recommended reserve $([math]::Round($reserveRecommBytes/1TB,2)) TB." `
+            "Monitor thin volume growth. Reduce provisioned sizes or add capacity to protect the rebuild reserve."
+    } else {
+        New-HealthCheck 'ThinReserveRisk' 'Warning' 'Pass' `
+            "Rebuild reserve is safe even at maximum thin volume growth. Free after max growth: $([math]::Round($freeAfterMaxGrowth/1TB,2)) TB, reserve requirement: $([math]::Round($reserveRecommBytes/1TB,2)) TB." `
+            "No action required."
+    }
+    $checks += $check11
 
     # ── Filter by CheckName ───────────────────────────────────────────────────
     $result = if ($CheckName) {

@@ -108,9 +108,11 @@ function Export-S2DWordReport {
             Size = if($_.Size){"$($_.Size.TiB) TiB"}else{'N/A'}
             Footprint = if($_.FootprintOnPool){"$($_.FootprintOnPool.TiB) TiB"}else{'N/A'}
             Eff = "$($_.EfficiencyPercent)%"; Prov = $_.ProvisioningType; Health = $_.HealthStatus
+            Headroom = if ($_.ThinGrowthHeadroom)    { "$([math]::Round($_.ThinGrowthHeadroom.TiB,2)) TiB" }    else { '—' }
+            MaxFP    = if ($_.MaxPotentialFootprint) { "$([math]::Round($_.MaxPotentialFootprint.TiB,2)) TiB" } else { '—' }
         }
     }
-    $body += Table -headers @('Volume','Resiliency','Size','Pool Footprint','Efficiency','Provisioning','Health') -rows $volRows -props @('Name','Resiliency','Size','Footprint','Eff','Prov','Health')
+    $body += Table -headers @('Volume','Resiliency','Size','Pool Footprint','Efficiency','Provisioning','Growth Headroom','Max Potential Footprint','Health') -rows $volRows -props @('Name','Resiliency','Size','Footprint','Eff','Prov','Headroom','MaxFP','Health')
     $body += BR
 
     # Health Checks

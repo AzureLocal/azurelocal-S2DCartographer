@@ -72,7 +72,11 @@ function Export-S2DCsvReport {
             IsInfrastructureVolume  = $_.IsInfrastructureVolume
             HealthStatus            = $_.HealthStatus
             OperationalStatus       = $_.OperationalStatus
-            IsDeduplicationEnabled  = $_.IsDeduplicationEnabled
+            IsDeduplicationEnabled       = $_.IsDeduplicationEnabled
+            ThinGrowthHeadroomTiB        = if ($_.ThinGrowthHeadroom)    { $_.ThinGrowthHeadroom.TiB }    else { '' }
+            ThinGrowthHeadroomTB         = if ($_.ThinGrowthHeadroom)    { $_.ThinGrowthHeadroom.TB }     else { '' }
+            MaxPotentialFootprintTiB     = if ($_.MaxPotentialFootprint) { $_.MaxPotentialFootprint.TiB } else { '' }
+            MaxPotentialFootprintTB      = if ($_.MaxPotentialFootprint) { $_.MaxPotentialFootprint.TB }  else { '' }
         }
     } | Export-Csv -Path $volPath -NoTypeInformation -Encoding UTF8
     $written += $volPath

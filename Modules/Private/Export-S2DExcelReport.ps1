@@ -117,11 +117,13 @@ function Export-S2DExcelReport {
             SizeTiB                 = if ($_.Size)            { $_.Size.TiB }            else { 0 }
             FootprintOnPoolTiB      = if ($_.FootprintOnPool) { $_.FootprintOnPool.TiB } else { 0 }
             AllocatedSizeTiB        = if ($_.AllocatedSize)   { $_.AllocatedSize.TiB }   else { 0 }
-            EfficiencyPercent       = $_.EfficiencyPercent
-            HealthStatus            = $_.HealthStatus
-            OperationalStatus       = $_.OperationalStatus
-            IsDeduplicationEnabled  = $_.IsDeduplicationEnabled
-            IsInfrastructureVolume  = $_.IsInfrastructureVolume
+            EfficiencyPercent            = $_.EfficiencyPercent
+            HealthStatus                 = $_.HealthStatus
+            OperationalStatus            = $_.OperationalStatus
+            IsDeduplicationEnabled       = $_.IsDeduplicationEnabled
+            IsInfrastructureVolume       = $_.IsInfrastructureVolume
+            ThinGrowthHeadroomTiB        = if ($_.ThinGrowthHeadroom)    { $_.ThinGrowthHeadroom.TiB }    else { $null }
+            MaxPotentialFootprintTiB     = if ($_.MaxPotentialFootprint) { $_.MaxPotentialFootprint.TiB } else { $null }
         }
     }
     $volData | Export-Excel -Path $OutputPath -WorksheetName 'Volumes' -AutoSize -FreezeTopRow -BoldTopRow -Append

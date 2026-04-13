@@ -1,18 +1,8 @@
 # Roadmap
 
-S2DCartographer follows a milestone-based release cadence. Each milestone targets a focused capability area. The current stable release is **v1.2.1**.
+S2DCartographer follows a milestone-based release cadence. Each milestone targets a focused capability area. The current stable release is **v1.3.0**.
 
 Live status of everything below is tracked on [GitHub Milestones](https://github.com/AzureLocal/azurelocal-s2d-cartographer/milestones).
-
----
-
-## v1.3.0 — What-If Planning
-
-*Target: next minor release*
-
-| Issue | Feature |
-| --- | --- |
-| [#27](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/27) | **What-if capacity calculator** — model the impact of adding nodes or drives before committing hardware. Given a proposed change (e.g., +4 drives per node), compute the new waterfall stages, reserve status, and usable capacity delta. Accepts a JSON snapshot from v1.2.0 as baseline input so modeling does not require a live cluster. |
 
 ---
 
@@ -48,6 +38,8 @@ The following ideas were considered and rejected because they do not fit the too
 
 | Version | Highlights |
 | --- | --- |
+| **v1.3.0** | What-if capacity modeling (`Invoke-S2DCapacityWhatIf`), thin provisioning risk detection (Check 6 tiered thresholds + new Check 11 ThinReserveRisk), `ThinGrowthHeadroom` / `MaxPotentialFootprint` volume properties, Thin Provision Risk KPI in HTML report, `Invoke-S2DWaterfallCalculation` pure function. Closes [#27](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/27), [#44](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/44). |
+| **v1.2.1** | Capacity model correctness — pool-member-only Stage 1, purely theoretical Stages 7/8, resiliency factor from pool settings. Closes [#43](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/43). |
 | **v1.2.0** | JSON snapshot export (SchemaVersion 1.0), opt-in CSV per-collector tables, pool-member disk filter (`IsPoolMember`) across reports and health checks, Surveyor cross-link in docs, `-IncludeNonPoolDisks` switch. Closes [#35](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/35), [#40](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/40), [#41](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/41), [#42](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/42). |
 | **v1.1.1** | Fix parameter-set splat in `Invoke-S2DCartographer` that broke `-KeyVaultName` and explicit `-Authentication`; added `-Username` parameter for Key Vault secrets without a ContentType tag. Closes [#39](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/39). |
 | **v1.1.0** | Default `-Format` changed to `All`; `ImportExcel` bundled as a `RequiredModules` dependency; per-run output folder structure `<OutputDir>\<ClusterName>\<yyyyMMdd-HHmm>\`; session log file; thicker pool allocation breakdown bar; full authentication / remoting / node fan-out docs with flowchart diagram. Closes [#34](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/34), [#36](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/36), [#37](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/37), [#38](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/38). |

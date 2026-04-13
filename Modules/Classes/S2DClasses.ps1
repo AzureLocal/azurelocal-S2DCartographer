@@ -33,6 +33,9 @@ class S2DVolume {
     [bool]        $IsInfrastructureVolume
     [double]      $EfficiencyPercent
     [double]      $OvercommitRatio
+    # Thin provisioning fields — populated only when ProvisioningType = 'Thin'
+    [S2DCapacity] $ThinGrowthHeadroom      # Size - AllocatedSize (how much more can be written)
+    [S2DCapacity] $MaxPotentialFootprint   # Size × NumberOfDataCopies (full pool footprint if completely written)
 }
 
 class S2DCacheTier {

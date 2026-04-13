@@ -103,11 +103,27 @@ function Export-S2DHtmlReport {
         "<tr><td>$($_.NodeName)</td><td>$($_.FriendlyName)</td><td>$($_.MediaType)</td><td>$($_.Role)</td><td>$(if($_.Size){"$($_.Size.TiB) TiB ($($_.Size.TB) TB)"}else{'N/A'})</td><td$hw>$(if($null -ne $_.WearPercentage){"$($_.WearPercentage)%"}else{'N/A'})</td><td>$hs</td></tr>"
     }) -join "`n"
 
+    # ── Thin provisioning risk KPI ────────────────────────────────────────────
+    $thinVols = @($vols | Where-Object { -not $_.IsInfrastructureVolume -and $_.ProvisioningType -eq 'Thin' })
+    $thinKpiHtml = ''
+    if ($thinVols.Count -gt 0 -and $pool -and $pool.TotalSize) {
+        $maxPotBytes = [int64](($thinVols | ForEach-Object { if ($_.MaxPotentialFootprint) { $_.MaxPotentialFootprint.Bytes } else { 0 } } | Measure-Object -Sum).Sum)
+        $thinRiskPct = [math]::Round($maxPotBytes / $pool.TotalSize.Bytes * 100, 1)
+        $thinKpiClass = if ($thinRiskPct -gt 100) { ' critical' } elseif ($thinRiskPct -gt 80) { ' warn' } else { '' }
+        $thinKpiStyle = if ($thinRiskPct -gt 100) { '' } elseif ($thinRiskPct -gt 80) { 'style="background:#fff4ce;border-color:#e8a218" ' } else { '' }
+        $thinKpiHtml = "<div class='kpi$thinKpiClass' $thinKpiStyle><div class='val'>$thinRiskPct%</div><div class='lbl'>Thin Provision Risk</div></div>"
+    }
+
     # ── Volume table rows ─────────────────────────────────────────────────────
     $volRows = ($vols | ForEach-Object {
         $infraTag = if ($_.IsInfrastructureVolume) { ' <span class="badge info">Infra</span>' } else { '' }
         $hs = if ($_.HealthStatus -eq 'Healthy') { '<span class="badge ok">Healthy</span>' } else { "<span class='badge fail'>$($_.HealthStatus)</span>" }
-        "<tr><td>$($_.FriendlyName)$infraTag</td><td>$($_.ResiliencySettingName) ($($_.NumberOfDataCopies) copies)</td><td>$(if($_.Size){"$($_.Size.TiB) TiB"}else{'N/A'})</td><td>$(if($_.FootprintOnPool){"$($_.FootprintOnPool.TiB) TiB"}else{'N/A'})</td><td>$($_.EfficiencyPercent)%</td><td>$($_.ProvisioningType)</td><td>$hs</td></tr>"
+        $thinCells = if ($_.ProvisioningType -eq 'Thin') {
+            $headroom = if ($_.ThinGrowthHeadroom) { "$([math]::Round($_.ThinGrowthHeadroom.TiB,2)) TiB" } else { 'N/A' }
+            $maxFp    = if ($_.MaxPotentialFootprint) { "$([math]::Round($_.MaxPotentialFootprint.TiB,2)) TiB" } else { 'N/A' }
+            "<td>$headroom</td><td>$maxFp</td>"
+        } else { "<td style='color:#a19f9d'>—</td><td style='color:#a19f9d'>—</td>" }
+        "<tr><td>$($_.FriendlyName)$infraTag</td><td>$($_.ResiliencySettingName) ($($_.NumberOfDataCopies) copies)</td><td>$(if($_.Size){"$($_.Size.TiB) TiB"}else{'N/A'})</td><td>$(if($_.FootprintOnPool){"$($_.FootprintOnPool.TiB) TiB"}else{'N/A'})</td><td>$($_.EfficiencyPercent)%</td><td>$($_.ProvisioningType)</td>$thinCells<td>$hs</td></tr>"
     }) -join "`n"
 
     # ── Health check cards ────────────────────────────────────────────────────
@@ -193,6 +209,7 @@ tr:hover{background:#f3f2f1}
     <div class="kpi"><div class="val">$(@($vols | Where-Object { -not $_.IsInfrastructureVolume }).Count)</div><div class="lbl">Workload Volumes</div></div>
     <div class="kpi$(if($wf -and $wf.ReserveStatus -eq 'Critical'){' critical'}else{''})"><div class="val">$(if($wf){"$($wf.ReserveStatus)"}else{'N/A'})</div><div class="lbl">Reserve Status</div></div>
     <div class="kpi"><div class="val">$(if($wf){"$($wf.BlendedEfficiencyPercent)%"}else{'N/A'})</div><div class="lbl">Resiliency Efficiency</div></div>
+    $thinKpiHtml
   </div>
   $poolSummary
   $cacheSummary
@@ -236,7 +253,7 @@ tr:hover{background:#f3f2f1}
 <div class="section">
   <h2>Volume Map</h2>
   <table>
-    <thead><tr><th>Volume</th><th>Resiliency</th><th>Size</th><th>Pool Footprint</th><th>Efficiency</th><th>Provisioning</th><th>Health</th></tr></thead>
+    <thead><tr><th>Volume</th><th>Resiliency</th><th>Size</th><th>Pool Footprint</th><th>Efficiency</th><th>Provisioning</th><th>Growth Headroom</th><th>Max Potential Footprint</th><th>Health</th></tr></thead>
     <tbody>$volRows</tbody>
   </table>
 </div>

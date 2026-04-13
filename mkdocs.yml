@@ -94,6 +94,7 @@ nav:
     - Reports: reports.md
     - Diagrams: diagrams.md
     - Cluster Snapshot Schema: schema/cluster-snapshot.md
+    - What-If Modeling: what-if.md
   - Concepts:
     - TiB vs TB: tib-vs-tb.md
     - Capacity Math: capacity-math.md

@@ -1,6 +1,6 @@
 @{
     RootModule           = 'S2DCartographer.psm1'
-    ModuleVersion        = '1.2.1'
+    ModuleVersion        = '1.3.0'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
     Author               = 'Azure Local Cloud'
@@ -23,6 +23,7 @@
         'Get-S2DHealthStatus',
         'ConvertTo-S2DCapacity',
         'Invoke-S2DCartographer',
+        'Invoke-S2DCapacityWhatIf',
         'New-S2DReport',
         'New-S2DDiagram'
     )
@@ -50,6 +51,17 @@
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-s2d-cartographer/main/docs/assets/images/s2dcartographer-icon.svg'
             ReleaseNotes = @'
+## v1.3.0 — Thin provisioning risk and what-if capacity modeling
+
+### Added
+- **What-if capacity modeling** (`Invoke-S2DCapacityWhatIf`) — model the capacity impact of adding nodes, adding disks per node, replacing disks, or changing resiliency without touching the live cluster. Accepts a JSON snapshot, a piped `S2DClusterData` object, or a live cluster connection. Returns a `S2DWhatIfResult` with baseline and projected waterfalls plus a per-stage delta table. Generates HTML and JSON reports. Closes #27.
+- **Thin provisioning risk detection** — `Get-S2DHealthStatus` check 6 (ThinOvercommit) now evaluates max potential pool footprint (Size × data copies for all thin volumes) against pool total at 80% warn / 100% critical thresholds, catching risk before actual overcommit occurs. Closes #44.
+- **Check 11: ThinReserveRisk** — new health check evaluates whether maximum thin volume growth would consume the rebuild reserve space, warning before that boundary is crossed.
+- `S2DVolume.ThinGrowthHeadroom` and `S2DVolume.MaxPotentialFootprint` properties (S2DCapacity) populated by `Get-S2DVolumeMap` for thin-provisioned volumes.
+- Thin Provision Risk KPI card in HTML executive summary dashboard (color-coded at 80% and 100%).
+- Growth Headroom and Max Potential Footprint columns in HTML, Word, Excel, and CSV reports for volume map section.
+- `Invoke-S2DWaterfallCalculation` private pure function — all 8-stage waterfall math extracted into a session-independent function callable by both `Get-S2DCapacityWaterfall` (live) and `Invoke-S2DCapacityWhatIf` (what-if).
+
 ## v1.2.1 — Capacity model correctness fix
 
 ### Fixed
