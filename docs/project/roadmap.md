@@ -1,8 +1,19 @@
 # Roadmap
 
-S2DCartographer follows a milestone-based release cadence. Each milestone targets a focused capability area. The current stable release is **v1.3.0**.
+S2DCartographer follows a milestone-based release cadence. Each milestone targets a focused capability area. The current stable release is **v1.4.2**.
 
 Live status of everything below is tracked on [GitHub Milestones](https://github.com/AzureLocal/azurelocal-s2d-cartographer/milestones).
+
+---
+
+## v1.5.0 — Report quality
+
+| Issue | Fix |
+| --- | --- |
+| [#53](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/53) | **PDF: capacity model waterfall bar graph** renders incorrectly — bar chart visual is wrong despite correct data values. |
+| [#54](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/54) | **PDF: pool allocation and storage pool health bar graphs** display incorrectly. |
+| [#55](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/55) | **Word: executive summary table** is cramped and unreadable — cell spacing, padding, and sizing need correction. |
+| [#56](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/56) | **Word: overall document formatting and layout** does not meet customer-facing quality standards. |
 
 ---
 
@@ -38,6 +49,10 @@ The following ideas were considered and rejected because they do not fit the too
 
 | Version | Highlights |
 | --- | --- |
+| **v1.4.2** | Fix `RebuildCapacity` false Critical when NodeName grouping is unreliable after pool-member disk deduplication. |
+| **v1.4.1** | Fix pool-member disk duplication on multi-node clusters — `Get-PhysicalDisk` on any S2D node returns all pool members globally; deduplicate by `UniqueId` to prevent 4× inflation of Stage 1 raw capacity. Adds top-level `NodeCount` to JSON snapshot. |
+| **v1.4.0** | 7-stage waterfall (Stage 8 removed), stage health isolation (all stages always OK, reserve health on `ReserveStatus` only), reserve formula corrected, infra volume detection extended (`UserStorage_N`, `HCI_UserStorage_N`, `SBEAgent`), HTML delta column, Word report waterfall table, `Invoke-S2DCapacityWhatIf` delta loop fix. Closes [#46](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/46)–[#52](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/52). |
+| **v1.3.1** | Sample output reports in docs. |
 | **v1.3.0** | What-if capacity modeling (`Invoke-S2DCapacityWhatIf`), thin provisioning risk detection (Check 6 tiered thresholds + new Check 11 ThinReserveRisk), `ThinGrowthHeadroom` / `MaxPotentialFootprint` volume properties, Thin Provision Risk KPI in HTML report, `Invoke-S2DWaterfallCalculation` pure function. Closes [#27](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/27), [#44](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/44). |
 | **v1.2.1** | Capacity model correctness — pool-member-only Stage 1, purely theoretical Stages 7/8, resiliency factor from pool settings. Closes [#43](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/43). |
 | **v1.2.0** | JSON snapshot export (SchemaVersion 1.0), opt-in CSV per-collector tables, pool-member disk filter (`IsPoolMember`) across reports and health checks, Surveyor cross-link in docs, `-IncludeNonPoolDisks` switch. Closes [#35](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/35), [#40](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/40), [#41](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/41), [#42](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/42). |
