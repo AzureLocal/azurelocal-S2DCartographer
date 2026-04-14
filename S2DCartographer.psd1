@@ -1,6 +1,6 @@
 @{
     RootModule           = 'S2DCartographer.psm1'
-    ModuleVersion        = '1.3.1'
+    ModuleVersion        = '1.4.0'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
     Author               = 'Azure Local Cloud'
@@ -51,6 +51,16 @@
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-s2d-cartographer/main/docs/assets/images/s2dcartographer-icon.svg'
             ReleaseNotes = @'
+## v1.4.0 — Capacity model hardening and report correctness
+- Waterfall reduced from 8 to 7 stages: Stage 7 is now the Usable Capacity terminus. Closes #52.
+- All waterfall stage Status values are always OK; reserve health lives on ReserveStatus only. Closes #47.
+- Reserve formula corrected: min(NodeCount,4) × one drive per server (not one node-worth). Closes #48.
+- Infrastructure volume detection extended: UserStorage_N, HCI_UserStorage_N, SBEAgent patterns added. Closes #46.
+- HTML report delta column split into its own Deducted column; em dash shown when no deduction. Closes #49.
+- Word report waterfall table updated: Status column removed, Deducted column added. Closes #50.
+- Invoke-S2DCapacityWhatIf delta loop fixed: was hardcoded to 8 iterations, now uses Stages.Count. Closes #51.
+- MAPROOM healthy-pool-snapshot fixture added for correctly-configured cluster validation.
+
 ## v1.3.1 — Sample output reports
 - docs/samples.md added: browse HTML dashboard, overprovisioned HTML, JSON snapshot, what-if HTML report, and what-if JSON result before running the tool. All generated from the MAPROOM IIC synthetic environment.
 
