@@ -94,7 +94,7 @@ $volumes | Format-Table FriendlyName, ResiliencySettingName, Size, FootprintOnPo
 # Cache tier — mode, disk count, all-flash detection
 $cache = Get-S2DCacheTierInfo
 
-# 8-stage capacity waterfall
+# 7-stage capacity waterfall
 $waterfall = Get-S2DCapacityWaterfall
 $waterfall.Stages | Format-Table Stage, Name, Size, Delta, Status
 

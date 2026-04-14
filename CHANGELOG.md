@@ -8,6 +8,34 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.4.0] — 2026-04-14
+
+### Fixed
+
+- **Capacity Model is now purely theoretical** — reduced from 8 to 7 stages (redundant Stage 8 removed). All stage `Status` values are always `OK`; reserve adequacy is reported via `ReserveStatus` on the waterfall object, not on pipeline stages. Stage names updated to match Microsoft S2D documentation: Stage 4 is **Reserve** (not "Rebuild Reserve"), Stage 7 is **Usable Capacity**. Stage 4 description corrected to "one drive per server, up to 4 servers". Closes [#52](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/52), [#47](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/47).
+- **HTML Capacity Model table** — waterfall reductions moved to a dedicated **Deducted** column in grey. Previously the delta was concatenated onto the stage name with no separator. Closes [#47](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/47).
+- **Word report formatting** — complete rewrite with branded cover, KPI tiles, blue section headers, alternating-row tables, and severity-colored remediation cards. Waterfall table updated to 7-stage design with Deducted column. Closes [#48](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/48).
+- **Excel repair error on open** — complete rewrite removing the Raw Data tab (corrupt oversized-JSON cell). Fixed `Close-ExcelPackage -NoSave` stripping formatting. Adds table styles, row-level health coloring, and KPI coloring. Closes [#49](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/49).
+- **ThinOvercommit/ThinReserveRisk false positives** — `Get-S2DInfraVolumeFlag` now recognises `UserStorage_N`, `HCI_UserStorage_N`, and `SBEAgent` as Azure Local system volumes. These are often thin-provisioned but are not user workload volumes. Closes [#46](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/46).
+- **Navigation** — "Related Projects" nav entry replaced with a **Companion Tools** docs page covering Azure Local Surveyor and the Platform repository. Closes [#50](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/50).
+- `Invoke-S2DCapacityWhatIf` delta stage loop no longer hardcodes 8 iterations; adapts to `Stages.Count`.
+
+### Added
+
+- `docs/companion-tools.md` — Surveyor vs Cartographer comparison table and lifecycle guidance.
+- `tests/maproom/Fixtures/healthy-pool-snapshot.json` — MAPROOM fixture for a correctly configured 4-node cluster: Healthy pool, Adequate reserve, all 12 health checks Pass.
+- `tests/maproom/unit/v1.4.0-fixes.Tests.ps1` — regression tests covering all v1.4.0 fixes.
+
+### Changed
+
+- `Build-PreviewReports.ps1` accepts `-SnapshotPath` to target any cluster snapshot.
+- `samples/cluster-snapshot.json` updated to 7-stage waterfall with correct names and byte values.
+- All unit tests updated: `Should -Be 8` → `Should -Be 7`, `Stages[7]` → `Stages[6]`.
+
+### Testing
+
+- 217 Pester tests passing, 0 failing.
+
 ## [1.3.0] — 2026-04-13
 
 ### Added

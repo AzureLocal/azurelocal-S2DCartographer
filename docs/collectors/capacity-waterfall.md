@@ -1,6 +1,6 @@
 # Get-S2DCapacityWaterfall
 
-Computes the complete 8-stage capacity accounting pipeline from raw physical disk capacity through resiliency overhead to final usable VM space.
+Computes the complete 7-stage capacity accounting pipeline from raw physical disk capacity through resiliency overhead to final usable VM space.
 
 ---
 
@@ -42,9 +42,9 @@ Returns `S2DCapacityWaterfall` — a single object with top-level summary proper
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `Stages` | `S2DWaterfallStage[]` | The 8 pipeline stages (see below) |
+| `Stages` | `S2DWaterfallStage[]` | The 7 pipeline stages (see below) |
 | `RawCapacity` | `S2DCapacity` | Stage 1 total (sum of capacity-tier disk bytes) |
-| `UsableCapacity` | `S2DCapacity` | Stage 8 total (final VM-usable space) |
+| `UsableCapacity` | `S2DCapacity` | Stage 7 total (final usable capacity) |
 | `ReserveRecommended` | `S2DCapacity` | Recommended reserve: `min(NodeCount, 4) × LargestDrive` |
 | `ReserveActual` | `S2DCapacity` | Actual free pool space |
 | `ReserveStatus` | `string` | `Adequate`, `Warning`, or `Critical` |
@@ -57,16 +57,16 @@ Returns `S2DCapacityWaterfall` — a single object with top-level summary proper
 
 | Property | Type | Description |
 | --- | --- | --- |
-| `Stage` | `int` | Stage number (1–8) |
+| `Stage` | `int` | Stage number (1–7) |
 | `Name` | `string` | Stage label |
 | `Size` | `S2DCapacity` | Remaining capacity at this stage |
 | `Delta` | `S2DCapacity` | Bytes consumed vs previous stage (`$null` if none) |
 | `Description` | `string` | Human-readable explanation of what changed |
-| `Status` | `string` | `OK`, `Warning`, or `Critical` (Stage 4 reserve only) |
+| `Status` | `string` | `OK` — all stages are always OK; reserve health is on `ReserveStatus` only |
 
 ---
 
-## The 8 Stages
+## The 7 Stages
 
 ```mermaid
 flowchart LR
@@ -75,8 +75,7 @@ flowchart LR
     S3 --> S4["Stage 4\nReserve"]
     S4 --> S5["Stage 5\nInfra Volume"]
     S5 --> S6["Stage 6\nAvailable"]
-    S6 --> S7["Stage 7\nResiliency"]
-    S7 --> S8["Stage 8\nFinal Usable"]
+    S6 --> S7["Stage 7\nUsable Capacity"]
 ```
 
 | Stage | Name | What changes |
@@ -87,8 +86,7 @@ flowchart LR
 | 4 | **After Reserve** | Subtracts `min(NodeCount, 4) × LargestCapacityDrive` |
 | 5 | **After Infra Volume** | Subtracts Azure Local infrastructure volume footprint |
 | 6 | **Available** | Pool space available for workload volumes |
-| 7 | **After Resiliency** | Subtracts total workload volume pool footprints |
-| 8 | **Final Usable** | Sum of workload volume logical sizes |
+| 7 | **Usable Capacity** | Stage 6 ÷ resiliency factor (e.g. ÷3 for three-way mirror). Pipeline terminus. |
 
 See [Capacity Math](../capacity-math.md) for a full explanation of each stage.
 
@@ -143,8 +141,8 @@ $wf.Stages | Where-Object Stage -eq 4 | Format-List
 
 ## Troubleshooting
 
-!!! warning "Stage 8 is 0 TiB"
-    Final usable capacity is zero when no workload volumes exist. Either the cluster has no CSV volumes, or all volumes are classified as infrastructure. Check:
+!!! warning "Stage 7 (Usable Capacity) is 0 TiB"
+    Usable capacity is zero when no workload volumes exist, or all volumes are classified as infrastructure. Check:
 
     ```powershell
     Get-S2DVolumeMap | Format-Table FriendlyName, IsInfrastructureVolume, Size

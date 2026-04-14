@@ -155,13 +155,13 @@ One entry per volume in the pool.
 
 ### `CapacityWaterfall`
 
-The 8-stage capacity accounting model.
+The 7-stage capacity accounting model.
 
 | Field | Type | Description |
 |---|---|---|
 | `Stages` | array of `S2DWaterfallStage` | Ordered array, 8 entries |
 | `RawCapacity` | [`S2DCapacity`](#s2dcapacity) | Stage 1 |
-| `UsableCapacity` | [`S2DCapacity`](#s2dcapacity) | Stage 8 |
+| `UsableCapacity` | [`S2DCapacity`](#s2dcapacity) | Stage 7 (pipeline terminus) |
 | `ReserveRecommended` | [`S2DCapacity`](#s2dcapacity) | Best-practice reserve |
 | `ReserveActual` | [`S2DCapacity`](#s2dcapacity) | Actual free pool space |
 | `ReserveStatus` | string | `Adequate` / `Warning` / `Critical` |

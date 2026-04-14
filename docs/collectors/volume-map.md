@@ -133,7 +133,7 @@ Get-S2DVolumeMap -VolumeName "VM-Storage-01" | Format-List
     Get-VirtualDisk | Format-Table FriendlyName, OperationalStatus, HealthStatus
     ```
 
-!!! tip "Stage 8 is zero after Get-S2DCapacityWaterfall"
+!!! tip "Usable Capacity (Stage 7) is zero after Get-S2DCapacityWaterfall"
     If the final usable capacity is 0 TiB, no workload volumes were found — either all volumes are classified as infrastructure, or `Get-S2DVolumeMap` returned no results. Check:
 
     ```powershell

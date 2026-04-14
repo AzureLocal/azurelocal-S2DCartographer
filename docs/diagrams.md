@@ -6,7 +6,7 @@ S2DCartographer generates SVG diagrams for embedding in reports, documentation, 
 
 ### Capacity Waterfall — `Waterfall`
 
-Horizontal bar diagram showing all 8 stages of capacity consumption. Each stage shows the cumulative remaining capacity with a delta arrow for the deduction at that stage. Status color-coding: green (OK), amber (Warning), red (Critical).
+Horizontal bar diagram showing all 7 stages of capacity consumption. Each stage shows the cumulative remaining capacity with a delta arrow for the deduction at that stage. Status color-coding: green (OK), amber (Warning), red (Critical).
 
 ```text
 Stage 1  Raw Physical         ████████████████████████████████████  55.88 TiB
@@ -16,7 +16,7 @@ Stage 4  After Reserve        ████████████████�
 Stage 5  After Infra Volume   ██████████████████████████████        41.36 TiB  − 0.25 TiB
 Stage 6  Available            ██████████████████████████████        41.36 TiB
 Stage 7  After Resiliency     ██████████                            13.79 TiB  −27.58 TiB
-Stage 8  Final Usable         ██████████                            13.97 TiB
+Stage 7  Usable Capacity    ██████████                            13.97 TiB
 ```
 
 ### Disk-to-Node Map — `DiskNodeMap`

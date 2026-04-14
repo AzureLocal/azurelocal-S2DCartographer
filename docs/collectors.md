@@ -14,7 +14,7 @@ Data is cached in the module session after first collection. Subsequent calls to
 | [`Get-S2DStoragePoolInfo`](collectors/storage-pool.md) | `S2DStoragePool` | Pool capacity, resiliency settings, overcommit ratio |
 | [`Get-S2DVolumeMap`](collectors/volume-map.md) | `S2DVolume[]` | Volume resiliency, footprint, and infrastructure classification |
 | [`Get-S2DCacheTierInfo`](collectors/cache-tier.md) | `S2DCacheTier` | Cache mode, all-flash detection, cache disk health |
-| [`Get-S2DCapacityWaterfall`](collectors/capacity-waterfall.md) | `S2DCapacityWaterfall` | 8-stage capacity pipeline from raw to usable |
+| [`Get-S2DCapacityWaterfall`](collectors/capacity-waterfall.md) | `S2DCapacityWaterfall` | 7-stage capacity pipeline from raw to usable |
 | [`Get-S2DHealthStatus`](collectors/health-checks.md) | `S2DHealthCheck[]` | 10 health checks with severity and remediation guidance |
 
 ---

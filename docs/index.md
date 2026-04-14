@@ -19,7 +19,7 @@ S2DCartographer scans a live cluster and maps your entire S2D storage stack — 
 
 | Capability | Description |
 | --- | --- |
-| **Capacity waterfall** | 8 stages from raw physical to final usable capacity |
+| **Capacity waterfall** | 7 stages from raw physical to final usable capacity |
 | **TiB/TB dual-display** | Every capacity value shows both binary and decimal units |
 | **Reserve validation** | Live comparison of actual vs. recommended reserve space |
 | **Health assessments** | 11 pass/fail checks with remediation guidance, including thin provisioning risk |
@@ -52,7 +52,7 @@ Invoke-S2DCartographer -ClusterName "my-cluster" -Credential (Get-Credential) -F
 - **[Reports](reports.md)** — Report formats, templates, and output options
 - **[Diagrams](diagrams.md)** — Available diagram types and generation options
 - **[Concepts: TiB vs TB](tib-vs-tb.md)** — Why the numbers don't match your drive labels
-- **[Concepts: Capacity Math](capacity-math.md)** — How the 8-stage waterfall is computed
+- **[Concepts: Capacity Math](capacity-math.md)** — How the 7-stage waterfall is computed
 - **[Concepts: Architecture](concepts/architecture.md)** — Pipeline design and session cache
 - **[Troubleshooting](project/troubleshooting.md)** — Common issues and fixes
 - **[Roadmap](project/roadmap.md)** — What's coming next

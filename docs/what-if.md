@@ -2,7 +2,7 @@
 
 `Invoke-S2DCapacityWhatIf` models the capacity impact of proposed hardware changes — adding nodes, adding disks, replacing disks, or changing resiliency — without touching the live cluster.
 
-It applies scenario modifications to a baseline capacity waterfall and recomputes all 8 stages, producing a side-by-side before/after comparison with per-stage deltas.
+It applies scenario modifications to a baseline capacity waterfall and recomputes all 7 stages, producing a side-by-side before/after comparison with per-stage deltas.
 
 ---
 
@@ -89,7 +89,7 @@ Model scaling out from 4 to 6 nodes on a cluster with 4 × 3.84 TB drives per no
 Invoke-S2DCapacityWhatIf -BaselineSnapshot C:\snapshots\clus01-20260101.json -AddNodes 2
 ```
 
-The projected waterfall recomputes all 8 stages with 6 nodes × 4 disks. Reserve deduction increases (min(6,4) × largest drive remains capped at 4), but raw capacity grows proportionally.
+The projected waterfall recomputes all 7 stages with 6 nodes × 4 disks. Reserve deduction increases (min(6,4) × largest drive remains capped at 4), but raw capacity grows proportionally.
 
 ---
 
@@ -142,7 +142,7 @@ Invoke-S2DCapacityWhatIf `
     -ChangeResiliency 2
 ```
 
-Stage 7 (After Resiliency) and Stage 8 (Final Usable) change. All earlier stages are unchanged because resiliency does not affect pool or reserve math. Blended efficiency changes from 33.3% to 50.0%.
+Stage 7 (Usable Capacity) changes. All earlier stages are unchanged because resiliency does not affect pool or reserve math. Blended efficiency changes from 33.3% to 50.0%.
 
 !!! warning "Resiliency change is a cluster-level operation"
     Changing resiliency on a live cluster requires draining, stopping, and reconfiguring volumes. This cmdlet models the capacity outcome only — it does not make any live changes.
@@ -234,7 +234,7 @@ The same `Invoke-S2DWaterfallCalculation` pure function computes both the baseli
 
 ## Related
 
-- [Capacity waterfall](collectors/capacity-waterfall.md) — how the 8 stages are computed
+- [Capacity waterfall](collectors/capacity-waterfall.md) — how the 7 stages are computed
 - [Capacity math](capacity-math.md) — reserve calculation, TiB vs TB, efficiency
 - [Health checks](collectors/health-checks.md) — thin provisioning risk (checks 6 and 11)
 - [JSON snapshot schema](schema/cluster-snapshot.md) — baseline snapshot format

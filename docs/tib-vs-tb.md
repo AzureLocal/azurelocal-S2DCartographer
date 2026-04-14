@@ -85,4 +85,4 @@ A 4-node cluster with 4× 3.84 TB NVMe per node:
 
 S2DCartographer makes this gap visible at Stage 2 of the capacity waterfall — so the TiB/TB discrepancy is explicit, not hidden.
 
-See [Capacity Math](capacity-math.md) for how this feeds into the full 8-stage pipeline.
+See [Capacity Math](capacity-math.md) for how this feeds into the full 7-stage pipeline.

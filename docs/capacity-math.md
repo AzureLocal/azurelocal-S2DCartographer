@@ -1,28 +1,27 @@
-# Capacity Math — The 8-Stage Waterfall
+# Capacity Math — The 7-Stage Waterfall
 
-S2DCartographer computes a full capacity waterfall that shows how storage capacity is consumed at every stage from raw physical disks to final usable VM space.
+S2DCartographer computes a 7-stage theoretical capacity waterfall showing how raw storage is accounted for from physical disks to final usable capacity.
 
 ---
 
-## The 8 Stages
+## The 7 Stages
 
 ```mermaid
 flowchart LR
-    S1["**Stage 1**\nRaw Physical\n(capacity disks)"]
-    S2["**Stage 2**\nVendor Label\n(TB display)"]
+    S1["**Stage 1**\nRaw Capacity\n(capacity disks)"]
+    S2["**Stage 2**\nVendor (TB)\n(informational)"]
     S3["**Stage 3**\nPool Overhead\n(~1%)"]
     S4["**Stage 4**\nReserve\n(min(N,4)×drive)"]
-    S5["**Stage 5**\nInfra Volume\n(250–500 GiB)"]
-    S6["**Stage 6**\nAvailable\n(workload budget)"]
-    S7["**Stage 7**\nResiliency\n(mirror/parity)"]
-    S8["**Stage 8**\nFinal Usable\n(VM space)"]
+    S5["**Stage 5**\nInfra Volume\n(pool footprint)"]
+    S6["**Stage 6**\nAvailable\n(for volumes)"]
+    S7["**Stage 7**\nUsable Capacity\n(÷ resiliency factor)"]
 
-    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
 ```
 
 ---
 
-### Stage 1 — Raw Physical Capacity
+### Stage 1 — Raw Capacity
 
 Sum of all **capacity-tier** disk sizes across all nodes. Cache-tier disks are excluded — they don't contribute to pool capacity.
 
@@ -82,7 +81,7 @@ Azure Local automatically creates an infrastructure volume for cluster metadata,
 S2DCartographer detects the infrastructure volume by name pattern and size heuristic, and breaks it out separately so it does not inflate the workload capacity figure.
 
 !!! note "Detection patterns"
-    Volumes are classified as infrastructure if they match `Infrastructure_<guid>`, `ClusterPerformanceHistory`, contain `infra` in the name, or are smaller than 600 GiB.
+    Volumes are classified as infrastructure if they match `Infrastructure_<guid>`, `ClusterPerformanceHistory`, `UserStorage_N`, `HCI_UserStorage_N`, `SBEAgent`, or contain `infra` in the name.
 
 ---
 
@@ -92,25 +91,22 @@ What remains after reserve and infrastructure volume. This is the budget from wh
 
 ---
 
-### Stage 7 — After Resiliency Overhead
+### Stage 7 — Usable Capacity
 
-Each volume's logical size is a fraction of its pool footprint based on the resiliency type:
+Stage 6 (Available for Volumes) divided by the resiliency factor. This is the amount of logical data you can actually store.
 
-| Resiliency type | Efficiency | Pool footprint |
+| Resiliency type | Factor | Efficiency |
 | --- | --- | --- |
-| Three-way mirror | 33.3% | Usable × 3 |
-| Two-way mirror | 50.0% | Usable × 2 |
-| Nested two-way mirror (2-node) | 25.0% | Usable × 4 |
-| Single parity (4-node) | 66.7% | Varies |
-| Dual parity / LRC (6-node) | 66.7%+ | Varies |
+| Three-way mirror | ÷ 3 | 33.3% |
+| Two-way mirror | ÷ 2 | 50.0% |
+| Nested two-way mirror (2-node) | ÷ 4 | 25.0% |
+| Single parity (4-node) | varies | ~66.7% |
+| Dual parity / LRC (6-node) | varies | ~66.7%+ |
 
-When volumes use different resiliency types, S2DCartographer computes overhead per volume and reports a **blended efficiency** for the cluster overall.
+`BlendedEfficiencyPercent` on the waterfall object reports the theoretical efficiency for the cluster's configured resiliency type.
 
----
-
-### Stage 8 — Final Usable Capacity
-
-The sum of all workload volume logical sizes. This is what VMs and workloads can actually consume.
+!!! info "This is theoretical"
+    The waterfall shows what you *can* store given perfect resiliency alignment. It is not a live count of what is provisioned. Actual provisioning state is in the Volume Map and Health Checks sections of the report.
 
 ---
 
@@ -118,16 +114,15 @@ The sum of all workload volume logical sizes. This is what VMs and workloads can
 
 4-node cluster, 16× 3.84 TB NVMe (all capacity, all-NVMe):
 
-| Stage | Name | Size | Delta |
+| Stage | Name | Deducted | Remaining |
 | --- | --- | --- | --- |
-| 1 | Raw Physical | 55.88 TiB | — |
-| 2 | Vendor Label (TB) | 55.88 TiB | — (61.44 TB labeled) |
-| 3 | Pool (after overhead) | 55.25 TiB | −0.63 TiB |
-| 4 | After Reserve | 41.28 TiB | −13.97 TiB ⚠️ Warning |
-| 5 | After Infra Volume | 40.97 TiB | −0.31 TiB |
-| 6 | Available | 40.97 TiB | — |
-| 7 | After Resiliency | 0.00 TiB | −40.97 TiB |
-| 8 | **Final Usable** | **13.97 TiB** | — |
+| 1 | Raw Capacity | — | 61.44 TB |
+| 2 | Vendor (TB) | — | 61.44 TB (55.88 TiB) |
+| 3 | Pool Overhead | −0.61 TB | 60.83 TB |
+| 4 | Reserve | −15.36 TB | 45.47 TB |
+| 5 | Infrastructure Volume | −0.08 TB | 45.39 TB |
+| 6 | Available for Volumes | — | 45.39 TB |
+| 7 | **Usable Capacity** | −30.26 TB | **15.13 TB** |
 
 ---
 

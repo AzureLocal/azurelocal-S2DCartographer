@@ -23,7 +23,7 @@ Self-contained single-file HTML with embedded CSS and Chart.js 4.4.0. No interne
 **Sections:**
 
 - **Executive Summary** — cluster name, node count, overall health badge (green/yellow/red), collection timestamp
-- **Capacity Waterfall** — interactive horizontal bar chart (Chart.js) showing all 8 stages with values
+- **Capacity Waterfall** — interactive horizontal bar chart (Chart.js) showing all 7 stages with values
 - **TiB/TB Toggle** — switch in the toolbar flips all capacity values between TiB and TB simultaneously
 - **Physical Disk Inventory** — table with node, model, media type, role, capacity, wear %, health
 - **Storage Pool** — total/allocated/remaining capacity, overcommit ratio
@@ -48,7 +48,7 @@ Pure PowerShell `.docx` — no Microsoft Office or COM automation required. Uses
 
 - Title page with cluster name, author, company, and collection date
 - Executive Summary — health status, key capacity metrics
-- Capacity Waterfall — 8-stage table
+- Capacity Waterfall — 7-stage table
 - Physical Disk Inventory — full table with all disk fields
 - Volume Map — per-volume resiliency and capacity
 - Health Assessment — all 11 checks with severity-coded status and remediation guidance
@@ -109,7 +109,7 @@ Multi-tab `.xlsx` using the [ImportExcel](https://github.com/dfinke/ImportExcel)
 | Tab | Content |
 | --- | --- |
 | **Summary** | Cluster name, node count, health status, collection date, key capacity metrics |
-| **Capacity Waterfall** | All 8 stages with TiB and TB columns |
+| **Capacity Waterfall** | All 7 stages with TiB and TB columns |
 | **Physical Disks** | Full disk inventory — node, model, media type, role, capacity, wear %, firmware |
 | **Storage Pool** | Pool name, health, total/allocated/remaining, overcommit ratio, resiliency settings |
 | **Volumes** | All volumes — resiliency, copies, provisioning type, size, footprint, efficiency |

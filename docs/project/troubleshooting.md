@@ -157,9 +157,9 @@ Look for `WARNING: Could not reach node` lines in the verbose output.
 
 ---
 
-### `Get-S2DCapacityWaterfall` Stage 8 is zero
+### `Get-S2DCapacityWaterfall` Stage 7 (Usable Capacity) is zero
 
-**Symptom:** Stage 8 (Final Usable) shows 0 TiB.
+**Symptom:** Stage 7 (Usable Capacity) shows 0 TiB.
 
 **Cause:** No workload volumes were found — either all volumes are infrastructure volumes, or `Get-S2DVolumeMap` was not called before the waterfall.
 
