@@ -17,9 +17,3 @@ S2DCartographer is part of a broader set of Azure Local tooling. These tools are
 
 !!! tip "The workflow"
     **Surveyor plans; Cartographer verifies.** Run Surveyor during the design phase to confirm your hardware choices meet your capacity requirements. Run S2DCartographer after deployment to validate the build matches what was planned — and on an ongoing basis to track health and available headroom.
-
----
-
-## Azure Local Platform
-
-The **[Azure Local Platform](https://github.com/AzureLocal/azurelocal-platform)** repository contains shared standards, documentation templates, and governance tooling used across the Azure Local toolset.
