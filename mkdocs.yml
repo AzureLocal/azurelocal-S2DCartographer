@@ -100,6 +100,21 @@ nav:
     - TiB vs TB: tib-vs-tb.md
     - Capacity Math: capacity-math.md
     - Architecture: concepts/architecture.md
+  - Cmdlet Reference:
+    - Overview: cmdlets/index.md
+    - Invoke-S2DCartographer: cmdlets/Invoke-S2DCartographer.md
+    - Invoke-S2DCapacityWhatIf: cmdlets/Invoke-S2DCapacityWhatIf.md
+    - Connect-S2DCluster: cmdlets/Connect-S2DCluster.md
+    - Disconnect-S2DCluster: cmdlets/Disconnect-S2DCluster.md
+    - Get-S2DPhysicalDiskInventory: cmdlets/Get-S2DPhysicalDiskInventory.md
+    - Get-S2DStoragePoolInfo: cmdlets/Get-S2DStoragePoolInfo.md
+    - Get-S2DVolumeMap: cmdlets/Get-S2DVolumeMap.md
+    - Get-S2DCacheTierInfo: cmdlets/Get-S2DCacheTierInfo.md
+    - Get-S2DCapacityWaterfall: cmdlets/Get-S2DCapacityWaterfall.md
+    - Get-S2DHealthStatus: cmdlets/Get-S2DHealthStatus.md
+    - New-S2DReport: cmdlets/New-S2DReport.md
+    - New-S2DDiagram: cmdlets/New-S2DDiagram.md
+    - ConvertTo-S2DCapacity: cmdlets/ConvertTo-S2DCapacity.md
   - Companion Tools: companion-tools.md
   - Project:
     - Roadmap: project/roadmap.md
