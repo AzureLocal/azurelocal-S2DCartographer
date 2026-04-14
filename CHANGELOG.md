@@ -8,6 +8,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and 
 
 ## [Unreleased]
 
+## [1.4.2] — 2026-04-14
+
+### Fixed
+
+- `RebuildCapacity` health check fired false Critical when pool-member disk deduplication could not assign correct `NodeName` via `StorageNode` associations — all disks landed on one node making the check compare pool free against the full pool total instead of one node's capacity. Fix: fall back to `pool.TotalSize / nodeCount` when `NodeName` group count is less than `nodeCount`.
+
+## [1.4.1] — 2026-04-14
+
+### Fixed
+
+- Pool-member disk duplication on multi-node clusters — `Get-PhysicalDisk` on any S2D cluster node returns all pool-member disks (globally visible pool). Querying each node individually produced `NodeCount×` copies of every pool-member disk, inflating Stage 1 raw capacity by 4× and making Stage 3 pool overhead appear as ~75%. Fixed by deduplicating pool-member disks by `UniqueId` after per-node collection. `StorageNode` associations used to assign correct `NodeName`.
+- Top-level `NodeCount` added to JSON snapshot for direct consumption by `Invoke-S2DCapacityWhatIf`.
+
 ## [1.4.0] — 2026-04-14
 
 ### Fixed
