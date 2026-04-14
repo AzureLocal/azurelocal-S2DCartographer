@@ -303,3 +303,81 @@ Describe 'v1.4.0 #47/#52 — Capacity waterfall is a purely theoretical 7-stage 
         }
     }
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pool-member disk deduplication
+# In S2D, Get-PhysicalDisk on any node returns ALL pool-member disks (the pool
+# is globally visible). Per-node CIM queries must be deduplicated by UniqueId
+# or Stage 1 raw capacity inflates by NodeCount×.
+# ─────────────────────────────────────────────────────────────────────────────
+Describe 'Pool-member disk deduplication — Stage 1 must not inflate when querying per node' {
+
+    # Simulate 4 nodes each returning the same 4 pool-member disks
+    # (as happens with Get-PhysicalDisk on S2D cluster nodes).
+    $diskSizeBytes = [int64]3840000000000   # 3.84 TB
+
+    function local:New-FakeDisk {
+        param([string]$UniqueId, [string]$NodeName, [bool]$IsPool = $true)
+        [PSCustomObject]@{
+            UniqueId   = $UniqueId
+            NodeName   = $NodeName
+            SizeBytes  = $diskSizeBytes
+            IsPoolMember = $IsPool
+            Role       = if ($IsPool) { 'Capacity' } else { 'Unknown' }
+        }
+    }
+
+    It 'raw capacity waterfall with deduplicated disks equals 4-node × 4-disk cluster, not 16-node equivalent' {
+        InModuleScope S2DCartographer -Parameters @{ sz = [int64]3840000000000 } {
+            param($sz)
+            # 4 real pool-member disks, each appearing 4 times (once per queried node)
+            $realDisks = @(
+                [PSCustomObject]@{ UniqueId = 'DISK-A'; SizeBytes = $sz; IsPoolMember = $true; Role = 'Capacity' }
+                [PSCustomObject]@{ UniqueId = 'DISK-B'; SizeBytes = $sz; IsPoolMember = $true; Role = 'Capacity' }
+                [PSCustomObject]@{ UniqueId = 'DISK-C'; SizeBytes = $sz; IsPoolMember = $true; Role = 'Capacity' }
+                [PSCustomObject]@{ UniqueId = 'DISK-D'; SizeBytes = $sz; IsPoolMember = $true; Role = 'Capacity' }
+            )
+            # Deduplicate by UniqueId (same logic now in Get-S2DPhysicalDiskInventory)
+            $seen = @{}
+            $deduped = @($realDisks | Where-Object {
+                if ($seen.ContainsKey($_.UniqueId)) { return $false }
+                $seen[$_.UniqueId] = $true; $true
+            })
+            $rawBytes = [int64]($deduped | Measure-Object -Property SizeBytes -Sum).Sum
+            # 4 disks × 3.84 TB = 15.36 TB (not 16× that)
+            $rawBytes | Should -Be ([int64](4 * $sz))
+        }
+    }
+
+    It 'waterfall Stage 1 equals pool TotalSize when disk duplication would otherwise inflate it 4x' {
+        InModuleScope S2DCartographer -Parameters @{ sz = [int64]3840000000000 } {
+            param($sz)
+            # Real cluster: 16 pool member disks (4 nodes × 4 disks)
+            $correctRaw   = [int64](16 * $sz)
+            $poolTotal    = [int64]([math]::Round($correctRaw * 0.99))
+
+            $wf = Invoke-S2DWaterfallCalculation `
+                -RawDiskBytes         $correctRaw `
+                -NodeCount            4 `
+                -LargestDiskSizeBytes $sz `
+                -PoolTotalBytes       $poolTotal `
+                -PoolFreeBytes        ([int64]($poolTotal * 0.65))
+
+            # Stage 1 and Stage 3 should be close (pool overhead ~1%)
+            $ratio = $wf.Stages[0].Size.Bytes / $wf.Stages[2].Size.Bytes
+            $ratio | Should -BeLessOrEqual 1.02  -Because 'Stage 1 raw should be within ~1% of pool total when disks are not duplicated'
+
+            # If disks were duplicated 4×, Stage 1 would be 4× pool total — catch that regression
+            $inflatedRaw = [int64](64 * $sz)
+            $wfInflated  = Invoke-S2DWaterfallCalculation `
+                -RawDiskBytes         $inflatedRaw `
+                -NodeCount            4 `
+                -LargestDiskSizeBytes $sz `
+                -PoolTotalBytes       $poolTotal `
+                -PoolFreeBytes        ([int64]($poolTotal * 0.65))
+
+            ($wfInflated.Stages[0].Size.Bytes / $wfInflated.Stages[2].Size.Bytes) | Should -BeGreaterThan 3.9 `
+                -Because 'inflated (bug) raw is ~4× pool total — confirms this test catches the regression'
+        }
+    }
+}

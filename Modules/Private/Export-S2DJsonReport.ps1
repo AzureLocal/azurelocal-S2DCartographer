@@ -37,6 +37,7 @@ function Export-S2DJsonReport {
             Nodes       = @($ClusterData.Nodes)
             CollectedAt = if ($ClusterData.CollectedAt) { $ClusterData.CollectedAt.ToUniversalTime().ToString('o') } else { $null }
         }
+        NodeCount          = $ClusterData.NodeCount
         OverallHealth      = $ClusterData.OverallHealth
         PhysicalDisks      = @($ClusterData.PhysicalDisks)
         StoragePool        = $ClusterData.StoragePool

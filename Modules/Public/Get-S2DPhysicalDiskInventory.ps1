@@ -416,6 +416,53 @@ function Get-S2DPhysicalDiskInventory {
     }
     catch { }
 
+    # ── Deduplicate pool-member disks and correct NodeName ───────────────────
+    # Get-PhysicalDisk on any cluster node returns ALL pool-member disks because
+    # the S2D pool is globally visible. Querying N nodes individually produces
+    # N copies of every pool-member disk, each stamped with the queried node's
+    # name. Non-pool disks (BOSS cards, SAN LUNs) are node-local — keep all.
+    # Use Get-StorageNode | Get-PhysicalDisk to build an authoritative
+    # UniqueId→NodeName map, then deduplicate pool members against it.
+    if ($poolDisks.Count -gt 0 -and $session -and @($nodes).Count -gt 1) {
+        $nodeDisksMap = @{}
+        try {
+            $storageNodes = @(Get-StorageNode -CimSession $session -ErrorAction SilentlyContinue)
+            foreach ($sn in @($storageNodes)) {
+                # StorageNode.Name is often FQDN — strip domain to get short name
+                $snShort = ($sn.Name -split '\.')[0]
+                $matchedNode = @($nodes | Where-Object {
+                    $_ -ieq $snShort -or $sn.Name -ilike "$_.*" -or $_ -ilike "$snShort*"
+                }) | Select-Object -First 1
+                $resolvedName = if ($matchedNode) { $matchedNode } else { $snShort }
+                foreach ($d in @($sn | Get-PhysicalDisk -CimSession $session -ErrorAction SilentlyContinue)) {
+                    if ($d.UniqueId -and -not $nodeDisksMap.ContainsKey($d.UniqueId)) {
+                        $nodeDisksMap[$d.UniqueId] = $resolvedName
+                    }
+                }
+            }
+        }
+        catch {
+            Write-Verbose "StorageNode disk-ownership query failed (will dedup by UniqueId only): $_"
+        }
+
+        $seenPool = @{}
+        $allDisks = @($allDisks | ForEach-Object {
+            $disk = $_
+            $isPool = $false
+            foreach ($key in (Get-S2DDiskLookupKeys $disk)) {
+                if ($poolDisks.ContainsKey($key)) { $isPool = $true; break }
+            }
+            if (-not $isPool)        { return $disk }  # non-pool: keep every node's copy
+            if (-not $disk.UniqueId) { return $disk }  # no UID: can't dedup safely
+            if ($seenPool.ContainsKey($disk.UniqueId)) { return }  # duplicate: discard
+            $seenPool[$disk.UniqueId] = $true
+            if ($nodeDisksMap.ContainsKey($disk.UniqueId)) {
+                $disk.NodeName = $nodeDisksMap[$disk.UniqueId]
+            }
+            $disk
+        })
+    }
+
     $poolMediaRanks = @(
         $allDisks |
         Where-Object {
