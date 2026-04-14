@@ -1,4 +1,6 @@
 # Word (.docx) report exporter — generates Open XML without requiring Office
+# Cover page with branded banner, KPI table, color-coded section headers,
+# alternating-row data tables, and health check cards with status colors.
 
 function Export-S2DWordReport {
     param(
@@ -12,140 +14,397 @@ function Export-S2DWordReport {
     $dir = Split-Path $OutputPath -Parent
     if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
 
-    $cn   = $ClusterData.ClusterName
-    $nc   = $ClusterData.NodeCount
-    $wf   = $ClusterData.CapacityWaterfall
-    $pool = $ClusterData.StoragePool
-    $vols = @($ClusterData.Volumes)
+    $cn    = $ClusterData.ClusterName
+    $nc    = $ClusterData.NodeCount
+    $wf    = $ClusterData.CapacityWaterfall
+    $pool  = $ClusterData.StoragePool
+    $vols  = @($ClusterData.Volumes)
     $allDisks = @($ClusterData.PhysicalDisks)
     $disks = if ($IncludeNonPoolDisks) { $allDisks } else { @($allDisks | Where-Object { $_.IsPoolMember -ne $false }) }
-    $hc   = @($ClusterData.HealthChecks)
-    $oh   = $ClusterData.OverallHealth
-    $date = Get-Date -Format 'MMMM d, yyyy'
+    $hc    = @($ClusterData.HealthChecks)
+    $oh    = $ClusterData.OverallHealth
+    $date  = Get-Date -Format 'MMMM d, yyyy'
 
-    # ── Build document XML ────────────────────────────────────────────────────
-    function local:P     { param([string]$text,[string]$style='Normal') "<w:p><w:pPr><w:pStyle w:val='$style'/></w:pPr><w:r><w:t xml:space='preserve'>$([System.Security.SecurityElement]::Escape($text))</w:t></w:r></w:p>" }
-    function local:H1    { param([string]$t) "<w:p><w:pPr><w:pStyle w:val='Heading1'/></w:pPr><w:r><w:t>$([System.Security.SecurityElement]::Escape($t))</w:t></w:r></w:p>" }
-    function local:H2    { param([string]$t) "<w:p><w:pPr><w:pStyle w:val='Heading2'/></w:pPr><w:r><w:t>$([System.Security.SecurityElement]::Escape($t))</w:t></w:r></w:p>" }
-    function local:BR    { "<w:p/>" }
-    function local:Bold  { param([string]$l,[string]$v) "<w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space='preserve'>$([System.Security.SecurityElement]::Escape($l))</w:t></w:r><w:r><w:t xml:space='preserve'> $([System.Security.SecurityElement]::Escape($v))</w:t></w:r></w:p>" }
-    function local:TRow  { param([string[]]$cells,[bool]$isHeader=$false)
-        $rp = if ($isHeader) { "<w:trPr><w:tblHeader/></w:trPr>" } else { "" }
-        $cs = $cells | ForEach-Object {
-            $shd = if ($isHeader) { "<w:shd w:val='clear' w:color='auto' w:fill='0078D4'/>" } else { "" }
-            $rp2 = if ($isHeader) { "<w:rPr><w:b/><w:color w:val='FFFFFF'/></w:rPr>" } else { "" }
-            "<w:tc><w:tcPr><w:tcW w:w='0' w:type='auto'/>$shd</w:tcPr><w:p><w:r>$rp2<w:t>$([System.Security.SecurityElement]::Escape($_))</w:t></w:r></w:p></w:tc>"
-        }
-        "<w:tr>$rp$($cs -join '')</w:tr>"
+    # ── XML helpers ───────────────────────────────────────────────────────────
+    function local:Esc { param([string]$s) [System.Security.SecurityElement]::Escape($s) }
+
+    function local:Para {
+        param(
+            [string]$text,
+            [string]$color       = '323130',
+            [int]   $sz          = 22,
+            [bool]  $bold        = $false,
+            [string]$align       = 'left',
+            [int]   $spaceBefore = 60,
+            [int]   $spaceAfter  = 60
+        )
+        $b = if ($bold) { '<w:b/>' } else { '' }
+        "<w:p><w:pPr><w:jc w:val='$align'/><w:spacing w:before='$spaceBefore' w:after='$spaceAfter'/></w:pPr><w:r><w:rPr>$b<w:color w:val='$color'/><w:sz w:val='$sz'/><w:szCs w:val='$sz'/><w:rFonts w:ascii='Segoe UI' w:hAnsi='Segoe UI'/></w:rPr><w:t xml:space='preserve'>$(Esc $text)</w:t></w:r></w:p>"
     }
-    function local:Table { param([string[]]$headers,[object[]]$rows,[string[]]$props)
-        $hrow = TRow -cells $headers -isHeader $true
+
+    function local:Spacer { "<w:p><w:pPr><w:spacing w:before='0' w:after='160'/></w:pPr></w:p>" }
+
+    function local:PageBreak { "<w:p><w:r><w:br w:type='page'/></w:r></w:p>" }
+
+    # Full-width branded banner — used for cover page and section dividers
+    function local:Banner {
+        param(
+            [string]$line1,
+            [string]$line2      = '',
+            [string]$fill       = '003A70',
+            [string]$textColor  = 'FFFFFF',
+            [int]   $sz1        = 52,
+            [int]   $sz2        = 26,
+            [string]$accentColor = 'F7941D'
+        )
+        $l2xml = if ($line2) {
+            "<w:p><w:pPr><w:jc w:val='center'/><w:spacing w:before='40' w:after='360'/></w:pPr><w:r><w:rPr><w:color w:val='$accentColor'/><w:sz w:val='$sz2'/><w:szCs w:val='$sz2'/><w:rFonts w:ascii='Segoe UI' w:hAnsi='Segoe UI'/></w:rPr><w:t>$(Esc $line2)</w:t></w:r></w:p>"
+        } else {
+            "<w:p><w:pPr><w:spacing w:before='0' w:after='280'/></w:pPr></w:p>"
+        }
+        @"
+<w:tbl>
+<w:tblPr>
+  <w:tblW w:w="0" w:type="auto"/>
+  <w:tblBorders>
+    <w:top w:val="none" w:sz="0" w:color="auto"/>
+    <w:left w:val="none" w:sz="0" w:color="auto"/>
+    <w:bottom w:val="none" w:sz="0" w:color="auto"/>
+    <w:right w:val="none" w:sz="0" w:color="auto"/>
+    <w:insideH w:val="none" w:sz="0" w:color="auto"/>
+    <w:insideV w:val="none" w:sz="0" w:color="auto"/>
+  </w:tblBorders>
+  <w:tblCellMar>
+    <w:top w:w="200" w:type="dxa"/>
+    <w:left w:w="280" w:type="dxa"/>
+    <w:bottom w:w="200" w:type="dxa"/>
+    <w:right w:w="280" w:type="dxa"/>
+  </w:tblCellMar>
+</w:tblPr>
+<w:tr>
+  <w:tc>
+    <w:tcPr>
+      <w:tcW w:w="0" w:type="auto"/>
+      <w:shd w:val="clear" w:color="auto" w:fill="$fill"/>
+      <w:vAlign w:val="center"/>
+    </w:tcPr>
+    <w:p>
+      <w:pPr><w:jc w:val="center"/><w:spacing w:before="400" w:after="80"/></w:pPr>
+      <w:r>
+        <w:rPr><w:b/><w:color w:val="$textColor"/><w:sz w:val="$sz1"/><w:szCs w:val="$sz1"/><w:rFonts w:ascii="Segoe UI" w:hAnsi="Segoe UI"/></w:rPr>
+        <w:t>$(Esc $line1)</w:t>
+      </w:r>
+    </w:p>
+    $l2xml
+  </w:tc>
+</w:tr>
+</w:tbl>
+"@
+    }
+
+    # Section header — narrower, blue bar with left-aligned title
+    function local:SectionHeader {
+        param([string]$title, [string]$fill = '0078D4')
+        @"
+<w:tbl>
+<w:tblPr>
+  <w:tblW w:w="0" w:type="auto"/>
+  <w:tblBorders>
+    <w:top w:val="none" w:sz="0" w:color="auto"/>
+    <w:left w:val="none" w:sz="0" w:color="auto"/>
+    <w:bottom w:val="none" w:sz="0" w:color="auto"/>
+    <w:right w:val="none" w:sz="0" w:color="auto"/>
+    <w:insideH w:val="none" w:sz="0" w:color="auto"/>
+    <w:insideV w:val="none" w:sz="0" w:color="auto"/>
+  </w:tblBorders>
+</w:tblPr>
+<w:tr>
+  <w:tc>
+    <w:tcPr>
+      <w:tcW w:w="0" w:type="auto"/>
+      <w:shd w:val="clear" w:color="auto" w:fill="$fill"/>
+    </w:tcPr>
+    <w:p>
+      <w:pPr><w:spacing w:before="140" w:after="140"/></w:pPr>
+      <w:r>
+        <w:rPr><w:b/><w:color w:val="FFFFFF"/><w:sz w:val="28"/><w:szCs w:val="28"/><w:rFonts w:ascii="Segoe UI" w:hAnsi="Segoe UI"/></w:rPr>
+        <w:t xml:space="preserve">  $(Esc $title)</w:t>
+      </w:r>
+    </w:p>
+  </w:tc>
+</w:tr>
+</w:tbl>
+"@
+    }
+
+    # KPI tile table — colored boxes with large value + small label
+    function local:KpiTable {
+        param([hashtable[]]$kpis)
+        $cells = $kpis | ForEach-Object {
+            $bg = switch ($_.status) {
+                'Fail'    { 'FDE7E9' } 'Warn' { 'FFF4CE' } 'Pass' { 'DFF6DD' } default { 'EFF6FC' }
+            }
+            $fg = switch ($_.status) {
+                'Fail'    { 'A4262C' } 'Warn' { '835B00' } 'Pass' { '107C10' } default { '0078D4' }
+            }
+            @"
+<w:tc>
+  <w:tcPr>
+    <w:tcW w:w="0" w:type="auto"/>
+    <w:shd w:val="clear" w:color="auto" w:fill="$bg"/>
+    <w:tcBdr>
+      <w:top w:val="single" w:sz="6" w:color="EDEBE9"/>
+      <w:left w:val="single" w:sz="6" w:color="EDEBE9"/>
+      <w:bottom w:val="single" w:sz="6" w:color="EDEBE9"/>
+      <w:right w:val="single" w:sz="6" w:color="EDEBE9"/>
+    </w:tcBdr>
+  </w:tcPr>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/><w:spacing w:before="100" w:after="40"/></w:pPr>
+    <w:r>
+      <w:rPr><w:b/><w:color w:val="$fg"/><w:sz w:val="40"/><w:szCs w:val="40"/><w:rFonts w:ascii="Segoe UI" w:hAnsi="Segoe UI"/></w:rPr>
+      <w:t>$(Esc $_.value)</w:t>
+    </w:r>
+  </w:p>
+  <w:p>
+    <w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="100"/></w:pPr>
+    <w:r>
+      <w:rPr><w:color w:val="605E5C"/><w:sz w:val="18"/><w:szCs w:val="18"/><w:rFonts w:ascii="Segoe UI" w:hAnsi="Segoe UI"/></w:rPr>
+      <w:t>$(Esc $_.label)</w:t>
+    </w:r>
+  </w:p>
+</w:tc>
+"@
+        }
+        @"
+<w:tbl>
+<w:tblPr>
+  <w:tblW w:w="0" w:type="auto"/>
+  <w:tblBorders>
+    <w:top w:val="none"/><w:left w:val="none"/>
+    <w:bottom w:val="none"/><w:right w:val="none"/>
+    <w:insideH w:val="none"/><w:insideV w:val="none"/>
+  </w:tblBorders>
+</w:tblPr>
+<w:tr>$($cells -join '')</w:tr>
+</w:tbl>
+"@
+    }
+
+    # Data table with blue header row and alternating body rows
+    function local:DataTable {
+        param([string[]]$headers, [object[]]$rows, [string[]]$props)
+        $hcells = $headers | ForEach-Object {
+            "<w:tc><w:tcPr><w:shd w:val='clear' w:color='auto' w:fill='003A70'/><w:tcMar><w:top w:w='80' w:type='dxa'/><w:left w:w='120' w:type='dxa'/><w:bottom w:w='80' w:type='dxa'/><w:right w:w='120' w:type='dxa'/></w:tcMar></w:tcPr><w:p><w:pPr><w:spacing w:before='60' w:after='60'/></w:pPr><w:r><w:rPr><w:b/><w:color w:val='FFFFFF'/><w:sz w:val='18'/><w:szCs w:val='18'/><w:rFonts w:ascii='Segoe UI' w:hAnsi='Segoe UI'/></w:rPr><w:t>$(Esc $_)</w:t></w:r></w:p></w:tc>"
+        }
+        $hrow = "<w:tr><w:trPr><w:tblHeader/></w:trPr>$($hcells -join '')</w:tr>"
+        $rowIndex = 0
         $drows = $rows | ForEach-Object {
-            $obj = $_
-            $cells = $props | ForEach-Object { $v = $obj.$_; if ($null -eq $v) { '' } else { [string]$v } }
-            TRow -cells $cells
+            $obj  = $_
+            $fill = if ($rowIndex % 2 -eq 0) { 'FFFFFF' } else { 'F5F5F5' }
+            $rowIndex++
+            $dcells = $props | ForEach-Object {
+                $v = $obj.$_; $vStr = if ($null -eq $v) { '' } else { [string]$v }
+                "<w:tc><w:tcPr><w:shd w:val='clear' w:color='auto' w:fill='$fill'/><w:tcMar><w:top w:w='60' w:type='dxa'/><w:left w:w='120' w:type='dxa'/><w:bottom w:w='60' w:type='dxa'/><w:right w:w='120' w:type='dxa'/></w:tcMar></w:tcPr><w:p><w:pPr><w:spacing w:before='40' w:after='40'/></w:pPr><w:r><w:rPr><w:color w:val='323130'/><w:sz w:val='18'/><w:szCs w:val='18'/><w:rFonts w:ascii='Segoe UI' w:hAnsi='Segoe UI'/></w:rPr><w:t xml:space='preserve'>$(Esc $vStr)</w:t></w:r></w:p></w:tc>"
+            }
+            "<w:tr>$($dcells -join '')</w:tr>"
         }
-        "<w:tbl><w:tblPr><w:tblW w:w='0' w:type='auto'/><w:tblBorders><w:top w:val='single' w:sz='4' w:color='EDEBE9'/><w:left w:val='single' w:sz='4' w:color='EDEBE9'/><w:bottom w:val='single' w:sz='4' w:color='EDEBE9'/><w:right w:val='single' w:sz='4' w:color='EDEBE9'/><w:insideH w:val='single' w:sz='4' w:color='EDEBE9'/><w:insideV w:val='single' w:sz='4' w:color='EDEBE9'/></w:tblBorders></w:tblPr>$hrow$($drows -join '')</w:tbl>"
+        @"
+<w:tbl>
+<w:tblPr>
+  <w:tblW w:w="0" w:type="auto"/>
+  <w:tblBorders>
+    <w:top w:val="single" w:sz="4" w:color="EDEBE9"/>
+    <w:left w:val="single" w:sz="4" w:color="EDEBE9"/>
+    <w:bottom w:val="single" w:sz="4" w:color="EDEBE9"/>
+    <w:right w:val="single" w:sz="4" w:color="EDEBE9"/>
+    <w:insideH w:val="single" w:sz="4" w:color="EDEBE9"/>
+    <w:insideV w:val="single" w:sz="4" w:color="EDEBE9"/>
+  </w:tblBorders>
+</w:tblPr>
+$hrow
+$($drows -join '')
+</w:tbl>
+"@
     }
 
+    # ── Build document body ───────────────────────────────────────────────────
     $body = @()
 
     # Cover page
-    $body += H1 "S2D Cartographer — $cn"
-    $body += P  "Storage Spaces Direct Analysis Report"
-    $body += P  "Generated: $date"
-    if ($Author)  { $body += P "Prepared by: $Author" }
-    if ($Company) { $body += P "Organization: $Company" }
-    $body += BR
+    $body += Banner 'S2D CARTOGRAPHER' 'Storage Spaces Direct Analysis Report'
+    $body += Spacer
+    $body += Para "Cluster:  $cn"   -sz 30 -bold $true  -spaceBefore 240 -spaceAfter 80
+    $body += Para "Nodes:    $nc"   -sz 22              -spaceBefore 40  -spaceAfter 40
+    $body += Para "Generated: $date" -sz 22             -spaceBefore 40  -spaceAfter 40
+    if ($Author)  { $body += Para "Prepared by: $Author"     -sz 22 -spaceBefore 40 -spaceAfter 40 }
+    if ($Company) { $body += Para "Organization: $Company"   -sz 22 -spaceBefore 40 -spaceAfter 40 }
+    $ohColor = switch ($oh) {
+        'Healthy'  { '107C10' } 'Warning' { '835B00' } 'Critical' { 'A4262C' } default { '323130' }
+    }
+    $body += Para "Overall Health: $oh" -color $ohColor -sz 26 -bold $true -spaceBefore 160 -spaceAfter 80
+    $body += PageBreak
 
     # Executive Summary
-    $body += H1 "Executive Summary"
-    $body += Bold "Cluster:" $cn
-    $body += Bold "Nodes:" $nc
-    $body += Bold "Overall Health:" $oh
+    $body += SectionHeader 'Executive Summary'
+    $body += Spacer
     if ($wf) {
-        $body += Bold "Raw Capacity:"    "$($wf.RawCapacity.TiB) TiB ($($wf.RawCapacity.TB) TB)"
-        $body += Bold "Usable Capacity:" "$($wf.UsableCapacity.TiB) TiB ($($wf.UsableCapacity.TB) TB)"
-        $body += Bold "Reserve Status:"  $wf.ReserveStatus
-        $body += Bold "Resiliency Efficiency:" "$($wf.BlendedEfficiencyPercent)%"
+        $reserveKpiStatus = switch ($wf.ReserveStatus) { 'Adequate' { 'Pass' } 'Warning' { 'Warn' } default { 'Fail' } }
+        $ohKpiStatus      = switch ($oh) { 'Healthy' { 'Pass' } 'Warning' { 'Warn' } default { 'Fail' } }
+        $body += KpiTable @(
+            @{ label = 'Raw Capacity';       value = "$($wf.RawCapacity.TiB) TiB";       status = 'neutral' }
+            @{ label = 'Usable Capacity';    value = "$($wf.UsableCapacity.TiB) TiB";    status = 'neutral' }
+            @{ label = 'Reserve Status';     value = $wf.ReserveStatus;                  status = $reserveKpiStatus }
+            @{ label = 'Blended Efficiency'; value = "$($wf.BlendedEfficiencyPercent)%"; status = 'neutral' }
+            @{ label = 'Overall Health';     value = $oh;                                status = $ohKpiStatus }
+        )
     }
-    $body += BR
+    $body += Spacer
+    $summaryRows = [System.Collections.Generic.List[PSCustomObject]]::new()
+    $summaryRows.Add([PSCustomObject]@{ Metric = 'Cluster Name'; Value = $cn })
+    $summaryRows.Add([PSCustomObject]@{ Metric = 'Node Count';   Value = $nc })
+    $summaryRows.Add([PSCustomObject]@{ Metric = 'Overall Health'; Value = $oh })
+    if ($wf) {
+        $summaryRows.Add([PSCustomObject]@{ Metric = 'Raw Capacity';      Value = "$($wf.RawCapacity.TiB) TiB ($($wf.RawCapacity.TB) TB)" })
+        $summaryRows.Add([PSCustomObject]@{ Metric = 'Usable Capacity';   Value = "$($wf.UsableCapacity.TiB) TiB ($($wf.UsableCapacity.TB) TB)" })
+        $summaryRows.Add([PSCustomObject]@{ Metric = 'Reserve Status';    Value = $wf.ReserveStatus })
+        $summaryRows.Add([PSCustomObject]@{ Metric = 'Resiliency Efficiency'; Value = "$($wf.BlendedEfficiencyPercent)%" })
+    }
+    if ($pool) {
+        $summaryRows.Add([PSCustomObject]@{ Metric = 'Pool Total';    Value = "$($pool.TotalSize.TiB) TiB ($($pool.TotalSize.TB) TB)" })
+        $summaryRows.Add([PSCustomObject]@{ Metric = 'Pool Free';     Value = "$($pool.RemainingSize.TiB) TiB ($($pool.RemainingSize.TB) TB)" })
+        $summaryRows.Add([PSCustomObject]@{ Metric = 'Overcommit Ratio'; Value = "$($pool.OvercommitRatio)x" })
+    }
+    if ($Author)  { $summaryRows.Add([PSCustomObject]@{ Metric = 'Prepared By';   Value = $Author }) }
+    if ($Company) { $summaryRows.Add([PSCustomObject]@{ Metric = 'Organization';  Value = $Company }) }
+    $summaryRows.Add([PSCustomObject]@{ Metric = 'Report Date'; Value = $date })
+    $body += DataTable -headers @('Metric', 'Value') -rows $summaryRows -props @('Metric', 'Value')
+    $body += PageBreak
 
     # Capacity Waterfall
-    $body += H1 "Capacity Waterfall"
-    $body += P  "The following table shows the 8-stage capacity reduction from raw physical disks to final usable storage."
+    $body += SectionHeader 'Capacity Waterfall'
+    $body += Spacer
+    $body += Para 'Theoretical pipeline showing how raw storage is accounted for under S2D best practices. Each stage represents a recommended deduction. No health state is shown — this is pure capacity math.' `
+        -sz 20 -color '605E5C' -spaceBefore 40 -spaceAfter 120
     if ($wf) {
         $wfRows = $wf.Stages | ForEach-Object {
             [PSCustomObject]@{
-                Stage = "Stage $($_.Stage)"; Name = $_.Name
-                TiB = if ($_.Size) { "$($_.Size.TiB) TiB" } else { '0 TiB' }
-                TB  = if ($_.Size) { "$($_.Size.TB) TB" }   else { '0 TB' }
-                Status = $_.Status; Description = $_.Description
+                Stage       = "Stage $($_.Stage)"
+                Name        = $_.Name
+                Deducted    = if ($_.Delta -and $_.Delta.TB -gt 0) { "-$($_.Delta.TB) TB" } else { '—' }
+                Remaining   = if ($_.Size) { "$($_.Size.TB) TB" } else { '0 TB' }
+                Description = $_.Description
             }
         }
-        $body += Table -headers @('Stage','Name','TiB','TB','Status','Description') -rows $wfRows -props @('Stage','Name','TiB','TB','Status','Description')
+        $body += DataTable -headers @('Stage', 'Name', 'Deducted', 'Remaining', 'Description') `
+            -rows $wfRows -props @('Stage', 'Name', 'Deducted', 'Remaining', 'Description')
+        $body += Spacer
+        $body += Para "Reserve — Recommended: $($wf.ReserveRecommended.TiB) TiB ($($wf.ReserveRecommended.TB) TB)   Actual: $($wf.ReserveActual.TiB) TiB   Status: $($wf.ReserveStatus)" `
+            -sz 20 -bold $true -spaceBefore 60 -spaceAfter 60
     }
-    $body += BR
+    $body += PageBreak
 
     # Physical Disk Inventory
-    $body += H1 "Physical Disk Inventory"
+    $body += SectionHeader 'Physical Disk Inventory'
+    $body += Spacer
     $diskRows = $disks | ForEach-Object {
         [PSCustomObject]@{
-            Node = $_.NodeName; Model = $_.FriendlyName; Type = $_.MediaType
-            Role = $_.Role; Size = if($_.Size){"$($_.Size.TiB) TiB"}else{'N/A'}
-            Wear = if($null -ne $_.WearPercentage){"$($_.WearPercentage)%"}else{'N/A'}
-            Health = $_.HealthStatus
+            Node     = $_.NodeName
+            Model    = $_.FriendlyName
+            Type     = $_.MediaType
+            Role     = $_.Role
+            Size     = if ($_.Size) { "$($_.Size.TiB) TiB ($($_.Size.TB) TB)" } else { 'N/A' }
+            Wear     = if ($null -ne $_.WearPercentage) { "$($_.WearPercentage)%" } else { 'N/A' }
+            Health   = $_.HealthStatus
+            Firmware = $_.FirmwareVersion
         }
     }
-    $body += Table -headers @('Node','Model','Type','Role','Size','Wear %','Health') -rows $diskRows -props @('Node','Model','Type','Role','Size','Wear','Health')
-    $body += BR
+    $body += DataTable -headers @('Node', 'Model', 'Type', 'Role', 'Size', 'Wear %', 'Health', 'Firmware') `
+        -rows $diskRows -props @('Node', 'Model', 'Type', 'Role', 'Size', 'Wear', 'Health', 'Firmware')
+    $body += PageBreak
 
     # Volume Map
-    $body += H1 "Volume Map"
+    $body += SectionHeader 'Volume Map'
+    $body += Spacer
     $volRows = $vols | ForEach-Object {
+        $infraMark = if ($_.IsInfrastructureVolume) { ' [Infra]' } else { '' }
         [PSCustomObject]@{
-            Name = $_.FriendlyName; Resiliency = "$($_.ResiliencySettingName) ($($_.NumberOfDataCopies)x)"
-            Size = if($_.Size){"$($_.Size.TiB) TiB"}else{'N/A'}
-            Footprint = if($_.FootprintOnPool){"$($_.FootprintOnPool.TiB) TiB"}else{'N/A'}
-            Eff = "$($_.EfficiencyPercent)%"; Prov = $_.ProvisioningType; Health = $_.HealthStatus
-            Headroom = if ($_.ThinGrowthHeadroom)    { "$([math]::Round($_.ThinGrowthHeadroom.TiB,2)) TiB" }    else { '—' }
-            MaxFP    = if ($_.MaxPotentialFootprint) { "$([math]::Round($_.MaxPotentialFootprint.TiB,2)) TiB" } else { '—' }
+            Name      = "$($_.FriendlyName)$infraMark"
+            Resiliency = "$($_.ResiliencySettingName) ($($_.NumberOfDataCopies)x)"
+            Size      = if ($_.Size)            { "$($_.Size.TiB) TiB" }            else { 'N/A' }
+            Footprint = if ($_.FootprintOnPool) { "$($_.FootprintOnPool.TiB) TiB" } else { 'N/A' }
+            Eff       = "$($_.EfficiencyPercent)%"
+            Prov      = $_.ProvisioningType
+            Headroom  = if ($_.ThinGrowthHeadroom)    { "$([math]::Round($_.ThinGrowthHeadroom.TiB,2)) TiB" }    else { '-' }
+            MaxFP     = if ($_.MaxPotentialFootprint) { "$([math]::Round($_.MaxPotentialFootprint.TiB,2)) TiB" } else { '-' }
+            Health    = $_.HealthStatus
         }
     }
-    $body += Table -headers @('Volume','Resiliency','Size','Pool Footprint','Efficiency','Provisioning','Growth Headroom','Max Potential Footprint','Health') -rows $volRows -props @('Name','Resiliency','Size','Footprint','Eff','Prov','Headroom','MaxFP','Health')
-    $body += BR
+    $body += DataTable `
+        -headers @('Volume', 'Resiliency', 'Size', 'Pool Footprint', 'Efficiency', 'Provisioning', 'Growth Headroom', 'Max Potential FP', 'Health') `
+        -rows $volRows `
+        -props @('Name', 'Resiliency', 'Size', 'Footprint', 'Eff', 'Prov', 'Headroom', 'MaxFP', 'Health')
+    $body += PageBreak
 
-    # Health Checks
-    $body += H1 "Health Assessment"
-    foreach ($check in $hc) {
-        $body += H2 "$($check.CheckName) [$($check.Severity)] — $($check.Status)"
-        $body += P  $check.Details
-        if ($check.Status -ne 'Pass' -and $check.Remediation) {
-            $body += Bold "Remediation:" $check.Remediation
+    # Health Assessment
+    $body += SectionHeader 'Health Assessment'
+    $body += Spacer
+    $hcRows = $hc | ForEach-Object {
+        [PSCustomObject]@{
+            Check    = $_.CheckName
+            Severity = $_.Severity
+            Status   = $_.Status
+            Details  = $_.Details
         }
-        $body += BR
     }
+    $body += DataTable -headers @('Check', 'Severity', 'Status', 'Details') `
+        -rows $hcRows -props @('Check', 'Severity', 'Status', 'Details')
 
-    # Appendix A: TiB vs TB
-    $body += H1 "Appendix A — TiB vs TB Explanation"
-    $body += P  "Drive manufacturers label storage in decimal terabytes (1 TB = 1,000,000,000,000 bytes). Windows and S2D report capacity in binary tebibytes (1 TiB = 1,099,511,627,776 bytes). This creates an apparent ~9% difference. All data is present and accounted for — the discrepancy is purely a unit conversion."
-    $tibTable = @(
-        [PSCustomObject]@{ Label='0.96 TB'; Windows='0.873 TiB'; Diff='-9.3%' }
-        [PSCustomObject]@{ Label='1.92 TB'; Windows='1.747 TiB'; Diff='-9.0%' }
-        [PSCustomObject]@{ Label='3.84 TB'; Windows='3.492 TiB'; Diff='-9.1%' }
-        [PSCustomObject]@{ Label='7.68 TB'; Windows='6.986 TiB'; Diff='-9.0%' }
-        [PSCustomObject]@{ Label='15.36 TB'; Windows='13.97 TiB'; Diff='-9.1%' }
+    # Remediation cards for non-passing checks
+    $nonPass = @($hc | Where-Object { $_.Status -ne 'Pass' })
+    if ($nonPass.Count -gt 0) {
+        $body += Spacer
+        $body += SectionHeader 'Remediation Actions' -fill '605E5C'
+        $body += Spacer
+        foreach ($check in $nonPass) {
+            $cardFill = switch ($check.Status) { 'Fail' { 'FDE7E9' } 'Warn' { 'FFF4CE' } default { 'F3F2F1' } }
+            $cardFg   = switch ($check.Status) { 'Fail' { 'A4262C' } 'Warn' { '835B00' } default { '323130' } }
+            $body += Banner "$($check.CheckName)  |  $($check.Severity)  |  $($check.Status)" '' `
+                -fill $cardFill -textColor $cardFg -sz1 24
+            $body += Para $check.Details -sz 20 -spaceBefore 60 -spaceAfter 40
+            if ($check.Remediation) {
+                $body += Para "Remediation: $($check.Remediation)" -sz 20 -bold $true -color '0078D4' -spaceBefore 40 -spaceAfter 100
+            }
+        }
+    }
+    $body += PageBreak
+
+    # Appendices
+    $body += SectionHeader 'Appendix A — TiB vs TB'
+    $body += Spacer
+    $body += Para 'Drive manufacturers label storage in decimal terabytes (1 TB = 1,000,000,000,000 bytes). Windows and S2D report capacity in binary tebibytes (1 TiB = 1,099,511,627,776 bytes). This creates an apparent ~9% difference. All data is present — the discrepancy is purely a unit conversion.' `
+        -sz 20 -color '605E5C' -spaceBefore 60 -spaceAfter 120
+    $tibRows = @(
+        [PSCustomObject]@{ DriveLabel = '0.96 TB';  Windows = '0.873 TiB';  Diff = '-9.3%' }
+        [PSCustomObject]@{ DriveLabel = '1.92 TB';  Windows = '1.747 TiB';  Diff = '-9.0%' }
+        [PSCustomObject]@{ DriveLabel = '3.84 TB';  Windows = '3.492 TiB';  Diff = '-9.1%' }
+        [PSCustomObject]@{ DriveLabel = '7.68 TB';  Windows = '6.986 TiB';  Diff = '-9.0%' }
+        [PSCustomObject]@{ DriveLabel = '15.36 TB'; Windows = '13.97 TiB';  Diff = '-9.1%' }
     )
-    $body += Table -headers @('Drive Label','Windows Reports','Difference') -rows $tibTable -props @('Label','Windows','Diff')
-    $body += BR
-
-    # Appendix B: Reserve Best Practices
-    $body += H1 "Appendix B — S2D Reserve Space Best Practices"
-    $body += P  "Microsoft recommends keeping at least min(NodeCount, 4) × (largest capacity drive size) of unallocated pool space. This reserve enables full rebuild after a drive or node failure. For a $nc-node cluster with $($wf ? "$($wf.ReserveRecommended.TB) TB" : 'N/A') largest drives, the recommended reserve is $($wf ? "$($wf.ReserveRecommended.TiB) TiB" : 'N/A')."
+    $body += DataTable -headers @('Drive Label', 'Windows Reports', 'Difference') `
+        -rows $tibRows -props @('DriveLabel', 'Windows', 'Diff')
+    $body += Spacer
+    $body += SectionHeader 'Appendix B — S2D Reserve Space Best Practices' -fill '005A9E'
+    $body += Spacer
+    $reserveText = "Microsoft recommends keeping at least min(NodeCount, 4) x (largest capacity drive size) of unallocated pool " +
+        "space to enable full rebuild after a drive or node failure. " +
+        "For a $nc-node cluster the recommended reserve is " +
+        "$(if ($wf) {"$($wf.ReserveRecommended.TiB) TiB ($($wf.ReserveRecommended.TB) TB)"} else {'N/A'})."
+    $body += Para $reserveText -sz 20 -color '605E5C' -spaceBefore 60 -spaceAfter 60
 
     $bodyXml = $body -join "`n"
 
-    # ── Assemble DOCX (ZIP of XML) ────────────────────────────────────────────
+    # ── Open XML package components ───────────────────────────────────────────
     $contentTypesXml = @'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -173,46 +432,60 @@ function Export-S2DWordReport {
     $stylesXml = @'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:style w:type="paragraph" w:styleId="Normal"><w:name w:val="Normal"/><w:rPr><w:sz w:val="22"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/>
-    <w:pPr><w:spacing w:before="240" w:after="120"/></w:pPr>
-    <w:rPr><w:b/><w:sz w:val="32"/><w:color w:val="0078D4"/></w:rPr>
-  </w:style>
-  <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/>
-    <w:pPr><w:spacing w:before="160" w:after="80"/></w:pPr>
-    <w:rPr><w:b/><w:sz w:val="26"/><w:color w:val="323130"/></w:rPr>
+  <w:docDefaults>
+    <w:rPrDefault>
+      <w:rPr>
+        <w:rFonts w:ascii="Segoe UI" w:hAnsi="Segoe UI" w:cs="Segoe UI"/>
+        <w:sz w:val="22"/>
+        <w:szCs w:val="22"/>
+        <w:color w:val="323130"/>
+      </w:rPr>
+    </w:rPrDefault>
+  </w:docDefaults>
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+    <w:name w:val="Normal"/>
+    <w:rPr>
+      <w:rFonts w:ascii="Segoe UI" w:hAnsi="Segoe UI"/>
+      <w:sz w:val="22"/>
+    </w:rPr>
   </w:style>
 </w:styles>
 '@
 
     $documentXml = @"
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 <w:body>
 $bodyXml
-<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>
+<w:sectPr>
+  <w:pgSz w:w="12240" w:h="15840"/>
+  <w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080"
+           w:header="720" w:footer="720" w:gutter="0"/>
+</w:sectPr>
 </w:body>
 </w:document>
 "@
 
-    # Write to zip
+    # ── Assemble DOCX ─────────────────────────────────────────────────────────
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $ms = [System.IO.MemoryStream]::new()
+    $ms  = [System.IO.MemoryStream]::new()
     $zip = [System.IO.Compression.ZipArchive]::new($ms, [System.IO.Compression.ZipArchiveMode]::Create, $true)
 
-    function local:AddEntry { param([string]$name,[string]$content)
-        $e = $zip.CreateEntry($name)
-        $sw = [System.IO.StreamWriter]::new($e.Open())
-        $sw.Write($content); $sw.Close()
+    function local:AddEntry { param([string]$name, [string]$content)
+        $e  = $zip.CreateEntry($name)
+        $sw = [System.IO.StreamWriter]::new($e.Open(), [System.Text.Encoding]::UTF8)
+        $sw.Write($content)
+        $sw.Close()
     }
 
-    AddEntry '[Content_Types].xml'       $contentTypesXml
-    AddEntry '_rels/.rels'               $relsXml
+    AddEntry '[Content_Types].xml'          $contentTypesXml
+    AddEntry '_rels/.rels'                  $relsXml
     AddEntry 'word/_rels/document.xml.rels' $wordRelsXml
-    AddEntry 'word/styles.xml'           $stylesXml
-    AddEntry 'word/document.xml'         $documentXml
-    $zip.Dispose()
+    AddEntry 'word/styles.xml'              $stylesXml
+    AddEntry 'word/document.xml'            $documentXml
 
+    $zip.Dispose()
     [System.IO.File]::WriteAllBytes($OutputPath, $ms.ToArray())
     $ms.Dispose()
 

@@ -7,7 +7,7 @@ function New-S2DDiagram {
         Accepts an S2DClusterData object and renders SVG diagrams to the output directory.
 
         Diagram types:
-          Waterfall      — 8-stage capacity waterfall horizontal bar diagram
+          Waterfall      — 7-stage capacity waterfall horizontal bar diagram
           DiskNodeMap    — Node boxes with disks color-coded by role and health
           PoolLayout     — Storage pool allocation pie chart with reserve and infra segments
           Resiliency     — Per-volume resiliency type, footprint, and efficiency

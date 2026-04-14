@@ -4,7 +4,7 @@
 function Invoke-S2DWaterfallCalculation {
     <#
     .SYNOPSIS
-        Computes the 8-stage S2D capacity waterfall from explicit numeric inputs.
+        Computes the 7-stage S2D capacity waterfall from explicit numeric inputs.
 
     .DESCRIPTION
         Pure function — no PowerShell session, no module state, no live CIM queries.
@@ -16,8 +16,7 @@ function Invoke-S2DWaterfallCalculation {
         Stage 4  After reserve space (min(NodeCount,4) × largest drive)
         Stage 5  After infrastructure volume
         Stage 6  Available for workload volumes
-        Stage 7  After resiliency overhead (theoretical)
-        Stage 8  Final usable capacity (pipeline terminus = Stage 7)
+        Stage 7  Usable capacity after resiliency overhead (pipeline terminus)
 
     .PARAMETER RawDiskBytes
         Sum of all pool-member capacity-tier disk sizes in bytes (Stage 1).
@@ -101,8 +100,7 @@ function Invoke-S2DWaterfallCalculation {
     $stage7Bytes = [int64]($stage6Bytes / $ResiliencyFactor)
     $theoreticalEffPct = [math]::Round(100.0 / $ResiliencyFactor, 1)
 
-    # ── Stage 8: Final usable (pipeline terminus) ─────────────────────────────
-    $stage8Bytes = $stage7Bytes
+    # Stage 7 is the pipeline terminus — no Stage 8.
 
     # ── Build stage objects ───────────────────────────────────────────────────
     function local:New-Stage {
@@ -117,26 +115,26 @@ function Invoke-S2DWaterfallCalculation {
         $s
     }
 
-    $stage4Status = switch ($reserveCalc.Status) { 'Adequate' { 'OK' } 'Warning' { 'Warning' } default { 'Critical' } }
-
+    # All stages are theoretical — no stage carries a health status.
+    # Reserve adequacy is reported via ReserveStatus on the waterfall object and
+    # evaluated in Health Checks (Check 1). It does not belong on a pipeline stage.
     $driveCount   = if ($LargestDiskSizeBytes -gt 0) { [math]::Round($RawDiskBytes / $LargestDiskSizeBytes) } else { 0 }
     $infraDisplay = if ($InfraVolumeBytes -gt 0) { "$([math]::Round($InfraVolumeBytes/1073741824,1)) GiB" } else { 'None detected' }
 
     $stages = @(
-        (New-Stage 1 'Raw Physical'           $stage1Bytes $stage1Bytes   "Sum of pool-member capacity-tier disk sizes ($driveCount drives, $('{0:N2}' -f ($LargestDiskSizeBytes/1TB)) TB each)"),
-        (New-Stage 2 'Vendor Label (TB)'      $stage2Bytes $stage1Bytes   "Informational — vendor labels drives in decimal TB; Windows reports binary TiB. Vendor label: $vendorLabeledTB TB. No bytes deducted."),
-        (New-Stage 3 'Pool (after overhead)'  $stage3Bytes $stage2Bytes   "Storage pool overhead (~$([math]::Round($PoolOverheadFraction*100,0))%). Pool total: $('{0:N2}' -f ($stage3Bytes/1TB)) TB"),
-        (New-Stage 4 'After Reserve'          $stage4Bytes $stage3Bytes   "Reserve: min($NodeCount,4) × $('{0:N2}' -f ($LargestDiskSizeBytes/1TB)) TB = $('{0:N2}' -f ($reserveBytes/1TB)) TB" $stage4Status),
-        (New-Stage 5 'After Infra Volume'     $stage5Bytes $stage4Bytes   "Infrastructure volume footprint: $infraDisplay"),
-        (New-Stage 6 'Available'              $stage6Bytes $stage5Bytes   "Pool space available for workload volumes"),
-        (New-Stage 7 'After Resiliency'       $stage7Bytes $stage6Bytes   "Theoretical resiliency overhead ($ResiliencyName, $theoreticalEffPct% efficiency). Available ÷ $ResiliencyFactor."),
-        (New-Stage 8 'Final Usable'           $stage8Bytes $stage7Bytes   "Pipeline terminus — no further theoretical deductions. Usable VM and workload capacity under $ResiliencyName resiliency.")
+        (New-Stage 1 'Raw Capacity'           $stage1Bytes $stage1Bytes   "All pool-member capacity drives. $driveCount × $('{0:N2}' -f ($LargestDiskSizeBytes/1TB)) TB = $('{0:N2}' -f ($stage1Bytes/1TB)) TB"),
+        (New-Stage 2 'Vendor (TB)'            $stage2Bytes $stage1Bytes   "Informational. Vendor labels use decimal TB; Windows reports binary TiB. Vendor label: $vendorLabeledTB TB. No deduction."),
+        (New-Stage 3 'Pool Overhead'          $stage3Bytes $stage2Bytes   "~$([math]::Round($PoolOverheadFraction*100,0))% held by the storage pool for internal metadata. Deduction: $('{0:N2}' -f (($stage2Bytes-$stage3Bytes)/1TB)) TB"),
+        (New-Stage 4 'Reserve'                $stage4Bytes $stage3Bytes   "Per Microsoft: one drive per server, up to 4 servers. $([math]::Min($NodeCount,4)) × $('{0:N2}' -f ($LargestDiskSizeBytes/1TB)) TB = $('{0:N2}' -f ($reserveBytes/1TB)) TB held for repair."),
+        (New-Stage 5 'Infrastructure Volume'  $stage5Bytes $stage4Bytes   "Azure Local system volume pool footprint deducted. $infraDisplay"),
+        (New-Stage 6 'Available for Volumes'  $stage6Bytes $stage5Bytes   "Pool space remaining for workload volume footprint after all deductions."),
+        (New-Stage 7 'Usable Capacity'        $stage7Bytes $stage6Bytes   "$ResiliencyName writes $([int]$ResiliencyFactor) copies of every byte. $('{0:N2}' -f ($stage6Bytes/1TB)) TB pool ÷ $([int]$ResiliencyFactor) copies = $('{0:N2}' -f ($stage7Bytes/1TB)) TB you can actually store.")
     )
 
     $wf = [S2DCapacityWaterfall]::new()
     $wf.Stages                   = $stages
     $wf.RawCapacity              = [S2DCapacity]::new($stage1Bytes)
-    $wf.UsableCapacity           = if ($stage8Bytes -gt 0) { [S2DCapacity]::new($stage8Bytes) } else { [S2DCapacity]::new([int64]0) }
+    $wf.UsableCapacity           = if ($stage7Bytes -gt 0) { [S2DCapacity]::new($stage7Bytes) } else { [S2DCapacity]::new([int64]0) }
     $wf.ReserveRecommended       = $reserveCalc.ReserveRecommended
     $wf.ReserveActual            = $reserveCalc.ReserveActual
     $wf.ReserveStatus            = $reserveCalc.Status

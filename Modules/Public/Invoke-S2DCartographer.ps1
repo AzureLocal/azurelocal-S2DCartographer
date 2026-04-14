@@ -7,7 +7,7 @@ function Invoke-S2DCartographer {
         Runs the complete S2DCartographer pipeline in a single call:
           1. Connect to the cluster (Connect-S2DCluster)
           2. Collect all data (physical disks, pool, volumes, cache tier)
-          3. Compute the 8-stage capacity waterfall
+          3. Compute the 7-stage capacity waterfall
           4. Run all 10 health checks
           5. Generate requested report formats (HTML, Word, PDF, Excel)
           6. Generate SVG diagrams (if -IncludeDiagrams)

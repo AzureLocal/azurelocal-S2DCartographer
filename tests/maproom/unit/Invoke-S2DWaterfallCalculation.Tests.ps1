@@ -14,8 +14,7 @@ Describe 'Invoke-S2DWaterfallCalculation' {
     # Stage 4: 60,820,000,000,000 - 15,360,000,000,000 = 45,460,000,000,000
     # Stage 5: 45,460,000,000,000 - 1,572,864,000,000  = 43,887,136,000,000
     # Stage 6: 43,887,136,000,000
-    # Stage 7: 43,887,136,000,000 / 3.0 = 14,629,045,333,333
-    # Stage 8: 14,629,045,333,333
+    # Stage 7 (Usable Capacity): 43,887,136,000,000 / 3.0 = 14,629,045,333,333  ← pipeline terminus
 
     # Note: $script: vars are invisible inside InModuleScope — use literals or -Parameters
     # All constants defined here for the Describe block's documentation value only.
@@ -40,7 +39,7 @@ Describe 'Invoke-S2DWaterfallCalculation' {
             }
         }
 
-        It 'returns exactly 8 stages' {
+        It 'returns exactly 7 stages' {
             InModuleScope S2DCartographer {
                 $result = Invoke-S2DWaterfallCalculation `
                     -RawDiskBytes         ([int64]61440000000000) `
@@ -48,11 +47,11 @@ Describe 'Invoke-S2DWaterfallCalculation' {
                     -LargestDiskSizeBytes ([int64]3840000000000) `
                     -PoolTotalBytes       ([int64]60820000000000) `
                     -PoolFreeBytes        ([int64]40820000000000)
-                $result.Stages.Count | Should -Be 8
+                $result.Stages.Count | Should -Be 7
             }
         }
 
-        It 'stage numbers are 1 through 8 in order' {
+        It 'stage numbers are 1 through 7 in order' {
             InModuleScope S2DCartographer {
                 $result = Invoke-S2DWaterfallCalculation `
                     -RawDiskBytes         ([int64]61440000000000) `
@@ -231,18 +230,6 @@ Describe 'Invoke-S2DWaterfallCalculation' {
             }
         }
 
-        It 'Stage 8 (Final Usable) equals Stage 7 — pipeline terminus' {
-            InModuleScope S2DCartographer {
-                $result = Invoke-S2DWaterfallCalculation `
-                    -RawDiskBytes         ([int64]61440000000000) `
-                    -NodeCount            4 `
-                    -LargestDiskSizeBytes ([int64]3840000000000) `
-                    -PoolTotalBytes       ([int64]60820000000000) `
-                    -PoolFreeBytes        ([int64]40820000000000)
-                $result.Stages[7].Size.Bytes | Should -Be $result.Stages[6].Size.Bytes
-            }
-        }
-
         It 'pipeline is monotonically non-increasing from Stage 3 onward' {
             InModuleScope S2DCartographer {
                 $stages = (Invoke-S2DWaterfallCalculation `
@@ -259,7 +246,7 @@ Describe 'Invoke-S2DWaterfallCalculation' {
             }
         }
 
-        It 'UsableCapacity matches Stage 8' {
+        It 'UsableCapacity matches Stage 7 (pipeline terminus)' {
             InModuleScope S2DCartographer {
                 $result = Invoke-S2DWaterfallCalculation `
                     -RawDiskBytes         ([int64]61440000000000) `
@@ -267,7 +254,7 @@ Describe 'Invoke-S2DWaterfallCalculation' {
                     -LargestDiskSizeBytes ([int64]3840000000000) `
                     -PoolTotalBytes       ([int64]60820000000000) `
                     -PoolFreeBytes        ([int64]40820000000000)
-                $result.UsableCapacity.Bytes | Should -Be $result.Stages[7].Size.Bytes
+                $result.UsableCapacity.Bytes | Should -Be $result.Stages[6].Size.Bytes
             }
         }
 
@@ -337,28 +324,17 @@ Describe 'Invoke-S2DWaterfallCalculation' {
             }
         }
 
-        It 'Stage 4 Status is OK when reserve Adequate' {
+        It 'all stage Status values are OK — waterfall is theoretical, no health state on stages' {
             InModuleScope S2DCartographer {
                 $result = Invoke-S2DWaterfallCalculation `
                     -RawDiskBytes         ([int64]61440000000000) `
                     -NodeCount            4 `
                     -LargestDiskSizeBytes ([int64]3840000000000) `
                     -PoolTotalBytes       ([int64]60820000000000) `
-                    -PoolFreeBytes        ([int64]40820000000000)
-                $result.Stages[3].Status | Should -Be 'OK'
-            }
-        }
-
-        It 'Stage 4 Status is Critical when reserve critically low' {
-            InModuleScope S2DCartographer {
-                $lowFree = [int64]3000000000000
-                $result  = Invoke-S2DWaterfallCalculation `
-                    -RawDiskBytes         ([int64]61440000000000) `
-                    -NodeCount            4 `
-                    -LargestDiskSizeBytes ([int64]3840000000000) `
-                    -PoolTotalBytes       ([int64]60820000000000) `
-                    -PoolFreeBytes        $lowFree
-                $result.Stages[3].Status | Should -Be 'Critical'
+                    -PoolFreeBytes        ([int64]3000000000000)   # critically low reserve — still OK on stages
+                foreach ($s in $result.Stages) {
+                    $s.Status | Should -Be 'OK' -Because "Stage $($s.Stage) must never carry health state; reserve status lives on ReserveStatus only"
+                }
             }
         }
     }

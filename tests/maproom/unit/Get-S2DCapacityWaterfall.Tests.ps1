@@ -78,13 +78,13 @@ Describe 'Get-S2DCapacityWaterfall' {
             }
         }
 
-        It 'produces exactly 8 stages' {
+        It 'produces exactly 7 stages' {
             InModuleScope S2DCartographer {
-                (Get-S2DCapacityWaterfall).Stages.Count | Should -Be 8
+                (Get-S2DCapacityWaterfall).Stages.Count | Should -Be 7
             }
         }
 
-        It 'stages are numbered 1 through 8 in order' {
+        It 'stages are numbered 1 through 7 in order' {
             InModuleScope S2DCartographer {
                 $i = 1
                 foreach ($stage in (Get-S2DCapacityWaterfall).Stages) {
@@ -169,13 +169,6 @@ Describe 'Get-S2DCapacityWaterfall' {
             }
         }
 
-        It 'Stage 8 (Final Usable) equals Stage 7 — pipeline terminus, no further deductions' {
-            InModuleScope S2DCartographer {
-                $result = Get-S2DCapacityWaterfall
-                $result.Stages[7].Size.Bytes | Should -Be $result.Stages[6].Size.Bytes
-            }
-        }
-
         It 'pipeline is monotonically non-increasing from Stage 3 onward' {
             InModuleScope S2DCartographer {
                 $stages = (Get-S2DCapacityWaterfall).Stages
@@ -199,10 +192,10 @@ Describe 'Get-S2DCapacityWaterfall' {
             }
         }
 
-        It 'UsableCapacity matches Stage 8' {
+        It 'UsableCapacity matches Stage 7 (pipeline terminus)' {
             InModuleScope S2DCartographer {
                 $result = Get-S2DCapacityWaterfall
-                $result.UsableCapacity.Bytes | Should -Be $result.Stages[7].Size.Bytes
+                $result.UsableCapacity.Bytes | Should -Be $result.Stages[6].Size.Bytes
             }
         }
 
@@ -238,12 +231,15 @@ Describe 'Get-S2DCapacityWaterfall' {
             }
         }
 
-        It 'Stage 4 Status is Critical when reserve is critically low' {
+        It 'all stage Status values are OK even when reserve is critically low — no health state on stages' {
             InModuleScope S2DCartographer {
                 $pool = $Script:S2DSession.CollectedData['StoragePool']
                 $pool.RemainingSize = [S2DCapacity]::new([int64]3000000000000)
 
-                (Get-S2DCapacityWaterfall).Stages[3].Status | Should -Be 'Critical'
+                $result = Get-S2DCapacityWaterfall
+                foreach ($s in $result.Stages) {
+                    $s.Status | Should -Be 'OK' -Because "Stage $($s.Stage) must never carry health state"
+                }
             }
         }
     }

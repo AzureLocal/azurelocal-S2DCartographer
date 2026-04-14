@@ -100,8 +100,7 @@ nav:
     - TiB vs TB: tib-vs-tb.md
     - Capacity Math: capacity-math.md
     - Architecture: concepts/architecture.md
-  - Related Projects:
-    - Azure Local Surveyor: https://azurelocal.github.io/azurelocal-surveyor
+  - Companion Tools: companion-tools.md
   - Project:
     - Roadmap: project/roadmap.md
     - Troubleshooting: project/troubleshooting.md

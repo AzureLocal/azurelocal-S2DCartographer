@@ -1,7 +1,7 @@
 function Get-S2DCapacityWaterfall {
     <#
     .SYNOPSIS
-        Computes the 8-stage theoretical capacity waterfall from raw physical to final usable capacity.
+        Computes the 7-stage theoretical capacity waterfall from raw physical to final usable capacity.
 
     .DESCRIPTION
         Thin wrapper around Invoke-S2DWaterfallCalculation. Extracts inputs from the live

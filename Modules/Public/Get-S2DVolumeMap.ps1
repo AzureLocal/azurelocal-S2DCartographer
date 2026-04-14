@@ -126,10 +126,15 @@ function Get-S2DVolumeMap {
 function Get-S2DInfraVolumeFlag {
     param([string]$FriendlyName, [int64]$SizeBytes)
 
-    # Azure Local infrastructure volume name patterns
+    # Azure Local infrastructure volume name patterns.
+    # UserStorage_N volumes are created by Azure Local deployment as system storage;
+    # they are often thin-provisioned but are not user workload volumes.
     $infraPatterns = @(
         '^Infrastructure_[0-9a-f-]+$',
         '^ClusterPerformanceHistory$',
+        '^UserStorage_\d+$',
+        '^HCI_UserStorage_\d+$',
+        '^SBEAgent$',
         'infra',
         'infrastructure'
     )

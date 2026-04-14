@@ -232,7 +232,7 @@ function Invoke-S2DCapacityWhatIf {
         -ResiliencyName       $projResName
 
     # ── Build delta table ─────────────────────────────────────────────────────
-    $deltaStages = for ($i = 0; $i -lt 8; $i++) {
+    $deltaStages = for ($i = 0; $i -lt $baselineWaterfall.Stages.Count; $i++) {
         $b = $baselineWaterfall.Stages[$i]
         $p = $projectedWaterfall.Stages[$i]
         $deltaBytes = $p.Size.Bytes - $b.Size.Bytes

@@ -822,7 +822,8 @@
     "Stages": [
       {
         "Stage": 1,
-        "Name": "Raw Physical",
+        "Name": "Raw Capacity",
+        "Status": "OK",
         "Size": {
           "Bytes": 61440000000000,
           "TiB": 55.88,
@@ -831,20 +832,13 @@
           "GB": 61440.0,
           "Display": "55.88 TiB (61.44 TB)"
         },
-        "Delta": {
-          "Bytes": 0,
-          "TiB": 0.0,
-          "TB": 0.0,
-          "GiB": 0.0,
-          "GB": 0.0,
-          "Display": "0 TiB (0 TB)"
-        },
-        "Description": "16 × 3.84 TB NVMe across 4 nodes",
-        "Status": "OK"
+        "Delta": null,
+        "Description": "All pool-member capacity drives. 16 \u00d7 3.84 TB = 61.44 TB"
       },
       {
         "Stage": 2,
-        "Name": "Pool Total",
+        "Name": "Vendor (TB)",
+        "Status": "OK",
         "Size": {
           "Bytes": 61440000000000,
           "TiB": 55.88,
@@ -853,148 +847,111 @@
           "GB": 61440.0,
           "Display": "55.88 TiB (61.44 TB)"
         },
-        "Delta": {
-          "Bytes": 0,
-          "TiB": 0.0,
-          "TB": 0.0,
-          "GiB": 0.0,
-          "GB": 0.0,
-          "Display": "0 TiB (0 TB)"
-        },
-        "Description": "Entire raw pool",
-        "Status": "OK"
+        "Delta": null,
+        "Description": "Informational. Vendor labels use decimal TB; Windows reports binary TiB. Vendor label: 61.44 TB. No deduction."
       },
       {
         "Stage": 3,
-        "Name": "Filesystem Overhead",
+        "Name": "Pool Overhead",
+        "Status": "OK",
         "Size": {
-          "Bytes": 60210000000000,
-          "TiB": 54.76,
-          "TB": 60.21,
-          "GiB": 56074.93,
-          "GB": 60210.0,
-          "Display": "54.76 TiB (60.21 TB)"
+          "Bytes": 60825600000000,
+          "TiB": 55.32,
+          "TB": 60.83,
+          "GiB": 56648.25,
+          "GB": 60825.6,
+          "Display": "55.32 TiB (60.83 TB)"
         },
         "Delta": {
-          "Bytes": -1230000000000,
-          "TiB": -1.12,
-          "TB": -1.23,
-          "GiB": -1145.53,
-          "GB": -1230.0,
-          "Display": "-1.12 TiB (-1.23 TB)"
+          "Bytes": 614400000000,
+          "TiB": 0.56,
+          "TB": 0.61,
+          "GiB": 572.2,
+          "GB": 614.4,
+          "Display": "0.56 TiB (0.61 TB)"
         },
-        "Description": "ReFS metadata and reserve blocks (~2%)",
-        "Status": "OK"
+        "Description": "~1% held by the storage pool for internal metadata. Deduction: 0.61 TB"
       },
       {
         "Stage": 4,
-        "Name": "Rebuild Reserve",
+        "Name": "Reserve",
+        "Status": "OK",
         "Size": {
-          "Bytes": 44850000000000,
-          "TiB": 40.79,
-          "TB": 44.85,
-          "GiB": 41769.82,
-          "GB": 44850.0,
-          "Display": "40.79 TiB (44.85 TB)"
+          "Bytes": 45465600000000,
+          "TiB": 41.35,
+          "TB": 45.47,
+          "GiB": 42343.14,
+          "GB": 45465.6,
+          "Display": "41.35 TiB (45.47 TB)"
         },
         "Delta": {
-          "Bytes": -15360000000000,
-          "TiB": -13.97,
-          "TB": -15.36,
-          "GiB": -14305.11,
-          "GB": -15360.0,
-          "Display": "-13.97 TiB (-15.36 TB)"
+          "Bytes": 15360000000000,
+          "TiB": 13.97,
+          "TB": 15.36,
+          "GiB": 14305.11,
+          "GB": 15360.0,
+          "Display": "13.97 TiB (15.36 TB)"
         },
-        "Description": "1 node-worth (15.36 TB raw) held for S2D auto-rebuild",
-        "Status": "OK"
+        "Description": "Per Microsoft: one drive per server, up to 4 servers. 4 \u00d7 3.84 TB = 15.36 TB held for repair."
       },
       {
         "Stage": 5,
-        "Name": "Usable After Reserve",
+        "Name": "Infrastructure Volume",
+        "Status": "OK",
         "Size": {
-          "Bytes": 44850000000000,
-          "TiB": 40.79,
-          "TB": 44.85,
-          "GiB": 41769.82,
-          "GB": 44850.0,
-          "Display": "40.79 TiB (44.85 TB)"
+          "Bytes": 45385069363200,
+          "TiB": 41.28,
+          "TB": 45.39,
+          "GiB": 42268.14,
+          "GB": 45385.07,
+          "Display": "41.28 TiB (45.39 TB)"
         },
         "Delta": {
-          "Bytes": 0,
-          "TiB": 0.0,
-          "TB": 0.0,
-          "GiB": 0.0,
-          "GB": 0.0,
-          "Display": "0 TiB (0 TB)"
+          "Bytes": 80530636800,
+          "TiB": 0.07,
+          "TB": 0.08,
+          "GiB": 75.0,
+          "GB": 80.53,
+          "Display": "0.07 TiB (0.08 TB)"
         },
-        "Description": "Raw space available for provisioned volumes",
-        "Status": "OK"
+        "Description": "Azure Local system volume pool footprint deducted. 75.0 GiB"
       },
       {
         "Stage": 6,
-        "Name": "Three-Way Mirror",
+        "Name": "Available for Volumes",
+        "Status": "OK",
         "Size": {
-          "Bytes": 14950000000000,
-          "TiB": 13.6,
-          "TB": 14.95,
-          "GiB": 13923.27,
-          "GB": 14950.0,
-          "Display": "13.6 TiB (14.95 TB)"
+          "Bytes": 45385069363200,
+          "TiB": 41.28,
+          "TB": 45.39,
+          "GiB": 42268.14,
+          "GB": 45385.07,
+          "Display": "41.28 TiB (45.39 TB)"
         },
-        "Delta": {
-          "Bytes": -29900000000000,
-          "TiB": -27.19,
-          "TB": -29.9,
-          "GiB": -27846.54,
-          "GB": -29900.0,
-          "Display": "-27.19 TiB (-29.9 TB)"
-        },
-        "Description": "÷3 for numberOfDataCopies = 3",
-        "Status": "OK"
+        "Delta": null,
+        "Description": "Pool space remaining for workload volume footprint after all deductions."
       },
       {
         "Stage": 7,
-        "Name": "Allocated to Volumes",
+        "Name": "Usable Capacity",
+        "Status": "OK",
         "Size": {
-          "Bytes": 25000000000000,
-          "TiB": 22.74,
-          "TB": 25.0,
-          "GiB": 23283.06,
-          "GB": 25000.0,
-          "Display": "22.74 TiB (25 TB)"
+          "Bytes": 15128356454400,
+          "TiB": 13.76,
+          "TB": 15.13,
+          "GiB": 14089.38,
+          "GB": 15128.36,
+          "Display": "13.76 TiB (15.13 TB)"
         },
         "Delta": {
-          "Bytes": 10050000000000,
-          "TiB": 9.14,
-          "TB": 10.05,
-          "GiB": 9359.79,
-          "GB": 10050.0,
-          "Display": "9.14 TiB (10.05 TB)"
+          "Bytes": 30256712908800,
+          "TiB": 27.52,
+          "TB": 30.26,
+          "GiB": 28178.76,
+          "GB": 30256.71,
+          "Display": "27.52 TiB (30.26 TB)"
         },
-        "Description": "Exceeds effective usable by 10 TB",
-        "Status": "Fail"
-      },
-      {
-        "Stage": 8,
-        "Name": "Free for Growth",
-        "Size": {
-          "Bytes": 0,
-          "TiB": 0.0,
-          "TB": 0.0,
-          "GiB": 0.0,
-          "GB": 0.0,
-          "Display": "0 TiB (0 TB)"
-        },
-        "Delta": {
-          "Bytes": -14950000000000,
-          "TiB": -13.6,
-          "TB": -14.95,
-          "GiB": -13923.27,
-          "GB": -14950.0,
-          "Display": "-13.6 TiB (-14.95 TB)"
-        },
-        "Description": "No room for new volumes; rebuild reserve consumed",
-        "Status": "Fail"
+        "Description": "3-way mirror writes 3 copies of every byte. 45.39 TB pool \u00f7 3 copies = 15.13 TB you can actually store."
       }
     ],
     "RawCapacity": {
@@ -1006,12 +963,12 @@
       "Display": "55.88 TiB (61.44 TB)"
     },
     "UsableCapacity": {
-      "Bytes": 14950000000000,
-      "TiB": 13.6,
-      "TB": 14.95,
-      "GiB": 13923.27,
-      "GB": 14950.0,
-      "Display": "13.6 TiB (14.95 TB)"
+      "Bytes": 15128356454400,
+      "TiB": 13.76,
+      "TB": 15.13,
+      "GiB": 14089.38,
+      "GB": 15128.36,
+      "Display": "13.76 TiB (15.13 TB)"
     },
     "ReserveRecommended": {
       "Bytes": 15360000000000,
@@ -1027,7 +984,7 @@
       "TB": 0.0,
       "GiB": 0.0,
       "GB": 0.0,
-      "Display": "0 TiB (0 TB)"
+      "Display": "0.0 TiB (0.0 TB)"
     },
     "ReserveStatus": "Critical",
     "IsOvercommitted": true,
@@ -1117,7 +1074,7 @@
       "CheckName": "CacheTierHealth",
       "Severity": "Info",
       "Status": "Pass",
-      "Details": "All-NVMe cluster — no dedicated cache tier.",
+      "Details": "All-NVMe cluster \u00e2\u20ac\u201d no dedicated cache tier.",
       "Remediation": ""
     }
   ]

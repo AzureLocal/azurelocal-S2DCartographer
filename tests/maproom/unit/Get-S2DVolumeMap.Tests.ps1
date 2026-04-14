@@ -160,11 +160,11 @@ Describe 'Get-S2DVolumeMap' {
             }
         }
 
-        It 'does not flag large workload volumes as infrastructure' {
+        It 'does not flag user workload volumes as infrastructure' {
             InModuleScope S2DCartographer {
                 Mock Get-S2DVirtualDiskData {
                     @([PSCustomObject]@{
-                        FriendlyName = 'UserStorage_1'
+                        FriendlyName = 'VM-Workload'
                         ResiliencySettingName = 'Mirror'; NumberOfDataCopies = 3
                         PhysicalDiskRedundancy = 2; ProvisioningType = 'Fixed'
                         Size = [int64]9000000000000; FootprintOnPool = [int64]27000000000000
@@ -204,9 +204,9 @@ Describe 'Get-S2DVolumeMap' {
 
                 $result = Get-S2DVolumeMap
 
-                $result.Count                                                                   | Should -Be 2
+                $result.Count                                                                        | Should -Be 2
                 ($result | Where-Object FriendlyName -like 'Infrastructure*').IsInfrastructureVolume | Should -BeTrue
-                ($result | Where-Object FriendlyName -eq 'UserStorage_1').IsInfrastructureVolume     | Should -BeFalse
+                ($result | Where-Object FriendlyName -eq 'UserStorage_1').IsInfrastructureVolume     | Should -BeTrue
             }
         }
     }

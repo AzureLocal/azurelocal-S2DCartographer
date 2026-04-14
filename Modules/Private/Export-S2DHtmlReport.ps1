@@ -34,17 +34,17 @@ function Export-S2DHtmlReport {
     if ($wf) {
         $wfLabels = ($wf.Stages | ForEach-Object { "'Stage $($_.Stage): $($_.Name)'" }) -join ','
         $wfValues = ($wf.Stages | ForEach-Object { if ($_.Size) { [math]::Round($_.Size.TiB, 2) } else { 0 } }) -join ','
+        # Capacity Model is a theoretical pipeline — all stages get a neutral info icon
+        # and all deltas are grey. Pass/Warn/Fail state belongs in Health Checks, not here.
         $wfDescRows = ($wf.Stages | ForEach-Object {
-            $icon     = switch ($_.Status) {
-                'Fail'    { '<span style="color:#d13438;font-size:15px">&#10006;</span>' }
-                'Warn'    { '<span style="color:#e8a218;font-size:15px">&#9888;</span>' }
-                default   { '<span style="color:#107c10;font-size:15px">&#10004;</span>' }
+            $icon      = '<span style="color:#0078d4;font-size:14px">&#x2192;</span>'
+            $deltaStr  = if ($_.Delta -and [math]::Abs($_.Delta.TB) -gt 0) {
+                "<span style='color:#a19f9d;font-size:12px'>&#x2212;$([math]::Round($_.Delta.TB,2)) TB</span>"
+            } else {
+                "<span style='color:#a19f9d;font-size:11px'>&#x2014;</span>"
             }
-            $deltaStr = if ($_.Delta -and [math]::Abs($_.Delta.TB) -gt 0) {
-                "<span style='color:#d13438;font-size:11px;margin-left:6px'>$([math]::Round($_.Delta.TB,2)) TB</span>"
-            } else { '' }
             $remaining = if ($_.Size) { "$([math]::Round($_.Size.TB,2)) TB" } else { '0 TB' }
-            "<tr><td style='width:28px;text-align:center;padding:6px 4px'>$icon</td><td style='width:24px;font-weight:700;color:#0078d4;padding:6px 8px'>$($_.Stage)</td><td style='font-weight:600;padding:6px 8px;white-space:nowrap'>$($_.Name)$deltaStr</td><td style='color:#605e5c;padding:6px 8px;font-size:12px'>$($_.Description)</td><td style='text-align:right;font-weight:600;padding:6px 8px;white-space:nowrap'>$remaining</td></tr>"
+            "<tr><td style='width:28px;text-align:center;padding:6px 4px'>$icon</td><td style='width:24px;font-weight:700;color:#0078d4;padding:6px 8px'>$($_.Stage)</td><td style='font-weight:600;padding:6px 8px;white-space:nowrap'>$($_.Name)</td><td style='text-align:right;color:#a19f9d;padding:6px 8px;white-space:nowrap;font-size:12px'>$deltaStr</td><td style='color:#605e5c;padding:6px 8px;font-size:12px'>$($_.Description)</td><td style='text-align:right;font-weight:600;padding:6px 8px;white-space:nowrap'>$remaining</td></tr>"
         }) -join "`n"
     }
 
@@ -217,7 +217,7 @@ tr:hover{background:#f3f2f1}
 
 <div class="section">
   <h2>Capacity Model</h2>
-  <p style="margin-bottom:14px;font-size:12px;color:var(--muted)">Theoretical pipeline showing how raw storage should be accounted for under S2D best practices. Each stage represents a recommended deduction. See the Volume Map and Health Checks below for actual current state.</p>
+  <p style="margin-bottom:14px;font-size:12px;color:var(--muted)">Theoretical pipeline showing how raw storage should be accounted for under S2D best practices. Each stage represents a recommended deduction. Actual provisioning state is in the Volume Map and Health Checks below. &nbsp;<a href="https://learn.microsoft.com/en-us/azure-stack/hci/concepts/plan-volumes" target="_blank" style="color:#0078d4">Microsoft S2D capacity planning docs &#8599;</a></p>
   <div class="toggle-row">
     <span>Display unit:</span>
     <button class="toggle-btn" onclick="toggleUnit()">Toggle TiB / TB</button>
@@ -225,7 +225,7 @@ tr:hover{background:#f3f2f1}
   </div>
   <div class="chart-wrap"><canvas id="waterfallChart"></canvas></div>
   <table style="margin-top:16px;font-size:13px;width:100%;border-collapse:collapse">
-    <thead><tr style="background:#f3f2f1"><th style="padding:7px 8px;text-align:left;width:28px"></th><th style="padding:7px 8px;text-align:left;width:24px">#</th><th style="padding:7px 8px;text-align:left">Stage</th><th style="padding:7px 8px;text-align:left">What it represents</th><th style="padding:7px 8px;text-align:right">Remaining</th></tr></thead>
+    <thead><tr style="background:#f3f2f1"><th style="padding:7px 8px;text-align:left;width:28px"></th><th style="padding:7px 8px;text-align:left;width:24px">#</th><th style="padding:7px 8px;text-align:left">Stage</th><th style="padding:7px 8px;text-align:right;color:#a19f9d;font-weight:500;width:90px">Deducted</th><th style="padding:7px 8px;text-align:left">What it represents</th><th style="padding:7px 8px;text-align:right">Remaining</th></tr></thead>
     <tbody>$wfDescRows</tbody>
   </table>
 </div>

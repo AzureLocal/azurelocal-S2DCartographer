@@ -60,10 +60,10 @@ Describe 'Invoke-S2DCapacityWhatIf' {
             }
         }
 
-        It 'DeltaStages contains exactly 8 entries' {
+        It 'DeltaStages contains exactly 7 entries' {
             InModuleScope S2DCartographer -Parameters @{ snap = $script:snapshotPath } {
                 $r = Invoke-S2DCapacityWhatIf -BaselineSnapshot $snap -PassThru
-                @($r.DeltaStages).Count | Should -Be 8
+                @($r.DeltaStages).Count | Should -Be 7
             }
         }
 
@@ -231,11 +231,11 @@ Describe 'Invoke-S2DCapacityWhatIf' {
             }
         }
 
-        It 'DeltaUsableTiB equals Stage 8 DeltaTiB' {
+        It 'DeltaUsableTiB equals Stage 7 DeltaTiB (pipeline terminus)' {
             InModuleScope S2DCartographer -Parameters @{ snap = $script:snapshotPath } {
                 $r           = Invoke-S2DCapacityWhatIf -BaselineSnapshot $snap -AddNodes 2 -PassThru
-                $stage8Delta = ($r.DeltaStages | Where-Object { $_.Stage -eq 8 }).DeltaTiB
-                $r.DeltaUsableTiB | Should -Be $stage8Delta
+                $stage7Delta = ($r.DeltaStages | Where-Object { $_.Stage -eq 7 }).DeltaTiB
+                $r.DeltaUsableTiB | Should -Be $stage7Delta
             }
         }
     }
