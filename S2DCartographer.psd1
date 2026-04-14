@@ -1,6 +1,6 @@
 @{
     RootModule           = 'S2DCartographer.psm1'
-    ModuleVersion        = '1.4.1'
+    ModuleVersion        = '1.4.2'
     CompatiblePSEditions = @('Core')
     GUID                 = 'c7f4a2d1-83e6-4b19-a05c-9d2e7f318c44'
     Author               = 'Azure Local Cloud'
@@ -51,6 +51,9 @@
             LicenseUri   = 'https://github.com/AzureLocal/azurelocal-s2d-cartographer/blob/main/LICENSE'
             IconUri      = 'https://raw.githubusercontent.com/AzureLocal/azurelocal-s2d-cartographer/main/docs/assets/images/s2dcartographer-icon.svg'
             ReleaseNotes = @'
+## v1.4.2 — Fix RebuildCapacity false Critical when NodeName assignment is unreliable
+- RebuildCapacity health check now falls back to pool total / node count when NodeName grouping produces fewer groups than nodes, preventing false Critical when disk deduplication cannot assign per-node ownership.
+
 ## v1.4.1 — Fix pool-member disk duplication on multi-node clusters
 - Get-PhysicalDisk on any S2D node returns ALL pool-member disks (globally visible pool). Querying each node individually inflated Stage 1 raw capacity by NodeCount× and made Stage 3 pool overhead appear as ~75%. Fixed by deduplicating pool-member disks by UniqueId after collection and correcting NodeName via StorageNode associations.
 - NodeCount now written to top-level of JSON snapshot for direct consumption by Invoke-S2DCapacityWhatIf.

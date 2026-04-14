@@ -237,11 +237,19 @@ function Get-S2DHealthStatus {
         $freeBytes  = $pool.RemainingSize.Bytes
         # Rebuild capacity math is pool-only — non-pool disks are never rebuilt
         # into the S2D pool if their node fails.
+        $nodeGroups = @($poolMemberDisks | Group-Object NodeName)
         $largestNodeDiskBytes = [int64](
-            @($poolMemberDisks | Group-Object NodeName) |
+            $nodeGroups |
             ForEach-Object { ($_.Group | Measure-Object -Property SizeBytes -Sum).Sum } |
             Measure-Object -Maximum
         ).Maximum
+        # Sanity check: if NodeName grouping produced fewer groups than nodes, disk
+        # NodeName assignment is unreliable (can happen when collection deduplicates
+        # pool-member disks but StorageNode associations are unavailable). Fall back
+        # to evenly distributing pool total across node count.
+        if ($nodeGroups.Count -lt $nodeCount -and $nodeCount -gt 0 -and $pool.TotalSize) {
+            $largestNodeDiskBytes = [int64]($pool.TotalSize.Bytes / $nodeCount)
+        }
 
         if ($freeBytes -lt $largestNodeDiskBytes) {
             $rebuildOk     = $false
