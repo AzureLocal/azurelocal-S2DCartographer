@@ -11,6 +11,10 @@ on:
         description: 'Dry run (skip actual Publish-Module call)'
         required: false
         default: 'true'
+      sync_ranger_secret:
+        description: 'Copy Cartographer PSGallery key into azurelocal-ranger repo secret'
+        required: false
+        default: 'false'
 
 permissions:
   contents: read
@@ -67,6 +71,23 @@ jobs:
             }
           }
           Publish-Module -Path $stagingDir -NuGetApiKey $env:PSGALLERY_API_KEY -Repository PSGallery -Verbose
+
+      - name: Sync Ranger PSGallery secret
+        if: ${{ github.event.inputs.sync_ranger_secret == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RANGER_SECRET_SYNC_TOKEN }}
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "RANGER_SECRET_SYNC_TOKEN secret is not set." >&2
+            exit 1
+          fi
+          if [ -z "$PSGALLERY_API_KEY" ]; then
+            echo "PSGALLERY_API_KEY secret is not set." >&2
+            exit 1
+          fi
+          gh secret set PSGALLERY_API_KEY -R AzureLocal/azurelocal-ranger --body "$PSGALLERY_API_KEY"
 
       - name: Dry-run summary
         if: ${{ github.event.inputs.dry_run == 'true' }}
