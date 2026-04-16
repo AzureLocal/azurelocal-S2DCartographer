@@ -6,6 +6,39 @@ All notable changes to S2DCartographer will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0](https://github.com/AzureLocal/azurelocal-s2d-cartographer/compare/v1.0.1...v1.1.0) (2026-04-16)
+
+
+### Features
+
+* **html-report:** pool health bar, capacity model rename, stage descriptions ([a56b2f3](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/a56b2f3e70b697d931d42a660be248ac9e8c5166))
+* **maproom:** migrate to platform AzureLocal.Maproom — fixture schema + CI validation ([5e9bf3f](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/5e9bf3f46e81fefe9274c3d7e590e1d70cac427c))
+* v1.1.0 — all formats by default, per-run folders, session logging, docs ([242585a](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/242585a56237a6291a49f5730cb507f70cbbc5ec))
+* v1.2.0 — JSON/CSV export, pool-member filter, Surveyor cross-link ([2f6d77b](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/2f6d77ba8287a63913c34b155e1ada424296c85b))
+* **v1.3.0:** thin provisioning risk detection and what-if capacity modeling ([9693826](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/969382605494f41f6cd040e379dfa3e55b3d3d73))
+
+
+### Bug Fixes
+
+* **#33:** resolve cluster node short names to FQDNs for per-node fan-out ([6b2a9ab](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/6b2a9ab735972000843f40f79656141d4ff1b83b))
+* **#39:** parameter-set discipline across all connect paths + KV -Username ([4899b33](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/4899b335ed1dcc9890e5ba1099b0ed89774a8e0c))
+* **#43:** capacity model is now purely theoretical — no live volume data in pipeline ([0d38750](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/0d38750f982370eb1cc40fe1092ec84b7e0d37af))
+* **ci:** grant pages:write + id-token:write to deploy-docs caller ([656cfba](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/656cfba4914785998230a8298b1317947a126316))
+* **ci:** install ImportExcel before Test-ModuleManifest in publish workflow ([3544453](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/35444531eebf6d08bf527952c05b1c12de057de7))
+* deduplicate pool-member disks collected via per-node CIM sessions ([31b8ef3](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/31b8ef3389dc4c5de1da4604199123d601944a85))
+* **health-status:** suppress ArrayList.Add() return value ([096d819](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/096d819a930b9f6ee3d14b5fc57e3725bb17badf))
+* **health-status:** swap Generic.List[S2DHealthCheck] for ArrayList ([b25530d](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/b25530dfa9d958b06fe832943bfcea6b9f7b42f7)), closes [#34](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/34)
+* **health:** use plain array instead of ArrayList in Get-S2DHealthStatus ([7737041](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/7737041a7b1ea918b11d05a4b9c309d96ead3780))
+* promote short cluster name to TrustedHosts FQDN match, richer cred prompt ([3fc4901](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/3fc490109dbb687cdcce1589e80316a354375636))
+* prompt for credentials when Connect-S2DCluster -Credential is omitted ([8fc5d8d](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/8fc5d8d983f4c5ec081447757eae267cf691fdcc))
+* propagate WinRM authentication and credential to all CIM session paths ([#31](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/31)) ([9037f03](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/9037f036160cd5cf035b6b59b1aaee2453c0d14a))
+* **publish:** bump ModuleVersion to 1.3.1 ([9243b7b](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/9243b7bede63c1838dc920cb62a4fb6a5cafc037))
+* **publish:** trim ReleaseNotes to under PSGallery 10600-char limit ([f1eb58f](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/f1eb58f66fed637a1ea11619a6208df1ca7bcc98))
+* RebuildCapacity false Critical when NodeName grouping is unreliable ([0e80639](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/0e806390e6366086c6f4efcc04216190fb515e8b))
+* resolve short cluster name to FQDN and surface actionable WinRM errors ([a7825de](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/a7825defbba0e4267ea64078400176eec2a3a2f1))
+* **v1.2.0:** treat missing IsPoolMember as pool member for fixture compat ([e2eb44a](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/e2eb44a7efff096843e652f09013e1ae730b1836))
+* **v1.4.0:** capacity model, report formatting, infra volume detection, nav ([feadd47](https://github.com/AzureLocal/azurelocal-s2d-cartographer/commit/feadd474a6ecc26922519633864087790cfa410a))
+
 ## [Unreleased]
 
 ## [1.4.2] — 2026-04-14
