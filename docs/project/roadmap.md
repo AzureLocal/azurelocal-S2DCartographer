@@ -6,7 +6,9 @@ Live status of everything below is tracked on [GitHub Milestones](https://github
 
 ---
 
-## v1.5.0 — Report quality
+## Next Release — v1.5.0 — Output Quality
+
+Stabilisation milestone. Fixes broken PDF graphs and Word document layout in the current product before any new capability is added.
 
 | Issue | Fix |
 | --- | --- |
@@ -17,19 +19,60 @@ Live status of everything below is tracked on [GitHub Milestones](https://github
 
 ---
 
-## Future Roadmap
+## v1.6.0 — Visualization, Scoring & Output
 
-*Tracked but not scheduled to a specific release.*
+Feature uplift covering interactive diagrams, graduated health check scoring, PDF layout improvements, and operational robustness.
+
+### Health Check & Scoring
 
 | Issue | Feature |
 | --- | --- |
-| [#25](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/25) | **OEM-specific disk enrichment** — extend `Get-S2DPhysicalDiskInventory` with vendor-specific data from Dell iDRAC, HPE iLO, Lenovo XClarity, and DataON interfaces. Surfaces drive bay location, predicted failure, and platform-level health alongside the standard S2D disk data. Pending a validation environment across all four vendors. |
+| [#57](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/57) | **Graduated threshold scoring** — partial-credit rules for health checks; replaces flat pass/fail with weighted, threshold-based scoring. |
+| [#58](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/58) | **Named calculation references** — pre-computed aggregates defined in health check config; depends on #57. |
+| [#59](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/59) | **Health check config download and hot-swap** — download and upload the health check JSON config via CLI without re-running collection; depends on #57, #58. |
+
+### Visualization
+
+| Issue | Feature |
+| --- | --- |
+| [#60](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/60) | **vis.js interactive topology diagram** — cluster, pool, and volume hierarchy rendered as an interactive in-browser diagram. |
+| [#61](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/61) | **html2canvas diagram capture** — embed the interactive vis.js diagram as a PNG in PDF and Word reports; depends on #60. |
+
+### PDF & Report Layout
+
+| Issue | Feature |
+| --- | --- |
+| [#62](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/62) | **Page-break-aware table helper** — automatic header repeat across page breaks for all multi-page tables. |
+| [#63](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/63) | **Portrait/landscape page switching per PDF section** — wide tables switch to landscape and back; depends on #62. |
+| [#64](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/64) | **Conditional cell coloring** — status and severity-based colour coding in HTML and PDF tables; depends on #62. |
+
+### Output & Cost
+
+| Issue | Feature |
+| --- | --- |
+| [#65](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/65) | **JSON evidence export** — raw collected data export with no scoring metadata, for downstream tooling and audit trails. |
+| [#68](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/68) | **Azure Hybrid Benefit and licensing cost savings** — surface AHB coverage, per-core cost, and potential savings in the report. |
+
+### UX
+
+| Issue | Feature |
+| --- | --- |
+| [#66](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/66) | **Full-screen progress overlay** — named collection stage labels shown during run so operators know what is happening. |
+| [#67](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/67) | **Per-section search and filter** — search input in HTML report to filter table rows per section. |
+
+### Robustness
+
+| Issue | Feature |
+| --- | --- |
+| [#69](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/69) | **Concurrent collection guard and empty-data safeguards** — prevent overlapping runs; handle empty collector results without crashing report generation. |
 
 ---
 
-## v2.0.0 — Reserved for breaking changes
+## v2.0.0 — Extended Hardware Coverage
 
-*No issues currently assigned. Held for any future change that requires a major version bump (removed cmdlets, renamed parameters, changed output object shape).*
+| Issue | Feature |
+| --- | --- |
+| [#25](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/25) | **OEM-specific disk enrichment** — extend `Get-S2DPhysicalDiskInventory` with vendor-specific data from Dell iDRAC, HPE iLO, Lenovo XClarity, and DataON interfaces. Surfaces drive bay location, predicted failure, and platform-level health alongside standard S2D disk data. Pending a validation environment across all four vendors. |
 
 ---
 
