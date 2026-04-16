@@ -76,18 +76,6 @@ Feature uplift covering interactive diagrams, graduated health check scoring, PD
 
 ---
 
-## Explicitly out of scope
-
-The following ideas were considered and rejected because they do not fit the tool's shape. S2DCartographer is a **point-in-time audit and reporting tool** — run once, produce a report, exit. Features that require a continuously-running service belong elsewhere.
-
-| Issue | Decision |
-| --- | --- |
-| [#26](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/26) | Historical trending with time-series charts and retention — closed as out-of-scope. Continuous trending belongs in Azure Monitor. A narrow "diff two JSON snapshots" use case may be filed as a separate issue later. |
-| [#28](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/28) | Teams / Slack webhook alerts — closed as out-of-scope. A webhook alert only fires when the module is run; for real proactive alerting, customers should use Azure Monitor Alert Rules against the cluster's native telemetry. |
-| [#29](https://github.com/AzureLocal/azurelocal-s2d-cartographer/issues/29) | Azure Monitor integration — closed as out-of-scope. Azure Monitor already instruments Azure Local clusters natively; there is no reason for this module to become a data ingestion pipeline. |
-
----
-
 ## Completed
 
 | Version | Highlights |
